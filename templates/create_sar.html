@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <title>Create SAR Call</title>
+</head>
+<body>
+<h2>Create SAR Call</h2>
+<form action="/create_sar" method="post">
+    <div>
+        <label for="start_date">Start Date:</label>
+        <input type="date" name="start_date" required>
+    </div>
+    <div>
+        <label for="finish_date">Finish Date:</label>
+        <input type="date" name="finish_date" required>
+    </div>
+    <div>
+        <label for="category">Category:</label>
+        <input type="text" name="category" required>
+    </div>
+    <div>
+        <label for="latitude">Latitude:</label>
+        <input type="text" name="latitude" required>
+    </div>
+    <div>
+        <label for="longitude">Longitude:</label>
+        <input type="text" name="longitude" required>
+    </div>
+    <div>
+        <label for="gpx_data">GPX Data:</label>
+        <textarea name="gpx_data"></textarea>
+    </div>
+    <div>
+        <input type="submit" value="Create">
+    </div>
+    <div id="map" style="width: 600px; height: 400px;"></div>
+    <script>
+        var map = L.map('map').setView([51.505, -0.09], 13); // Default to London, adjust as needed
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        var marker;
+
+        map.on('click', function (e) {
+            if (marker) {
+                map.removeLayer(marker);
+            }
+            marker = L.marker(e.latlng).addTo(map);
+            document.querySelector('input[name="latitude"]').value = e.latlng.lat;
+            document.querySelector('input[name="longitude"]').value = e.latlng.lng;
+        });
+
+        // If editing, set the marker to the existing coordinates
+        var latInput = document.querySelector('input[name="latitude"]');
+        var lngInput = document.querySelector('input[name="longitude"]');
+        if (latInput.value && lngInput.value) {
+            marker = L.marker([latInput.value, lngInput.value]).addTo(map);
+        }
+    </script>
+
+</form>
+
+
+<a href="/dashboard">Back to Dashboard</a>
+</body>
+</html>
