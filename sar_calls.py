@@ -2,7 +2,9 @@ from app import app, db
 from flask import request, redirect, flash, render_template, url_for
 from flask_login import login_required, current_user
 from dateutil import parser
-from models import SARCall
+from models import SARCall, GPSTrack
+
+
 @app.route('/create_sar', methods=['GET', 'POST'])
 @login_required
 def create_sar():
@@ -12,7 +14,12 @@ def create_sar():
         category = request.form.get('category')
         latitude = request.form.get('latitude')
         longitude = request.form.get('longitude')
-        gpx_data = request.form.get('gpx_data')
+        gpx_data_list = request.form.getlist('gpx_data[]')
+        gpx_color_list = request.form.getlist('gpx_color[]')
+
+        for data, color in zip(gpx_data_list, gpx_color_list):
+            track = GPSTrack(data=data, color=color, sar_call=new_sar_call)
+            db.session.add(track)
 
         new_sar_call = SARCall(
             start_date=start_date,
@@ -21,7 +28,8 @@ def create_sar():
             latitude=latitude,
             longitude=longitude,
             search_manager_id=current_user.id,
-            gpx_data=gpx_data
+            gpx_data=gpx_data_list,
+            gpx_color_list=gpx_color_list,
         )
         db.session.add(new_sar_call)
         db.session.commit()
@@ -53,6 +61,7 @@ def edit_sar(id):
         return redirect(url_for('list_sar'))
     return render_template('edit_sar.html', sar_call=sar_call)
 
+
 @app.route('/delete_sar/<int:id>')
 @login_required
 def delete_sar(id):
@@ -61,4 +70,3 @@ def delete_sar(id):
     db.session.commit()
     flash('SAR call deleted successfully!', 'success')
     return redirect(url_for('list_sar'))
-

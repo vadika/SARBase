@@ -1,39 +1,60 @@
-<!DOCTYPE html>
-<html>
-<head>
+{% extends "base.html" %}
+
+{% block title %}
+    Create SAR Record
+{% endblock %}
+
+{% block content %}
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <title>Create SAR Call</title>
-</head>
-<body>
-<h2>Create SAR Call</h2>
-<form action="/create_sar" method="post">
-    <div>
-        <label for="start_date">Start Date:</label>
-        <input type="date" name="start_date" required>
-    </div>
-    <div>
-        <label for="finish_date">Finish Date:</label>
-        <input type="date" name="finish_date" required>
-    </div>
-    <div>
-        <label for="category">Category:</label>
-        <input type="text" name="category" required>
-    </div>
-    <div>
-        <label for="latitude">Latitude:</label>
-        <input type="text" name="latitude" required>
-    </div>
-    <div>
-        <label for="longitude">Longitude:</label>
-        <input type="text" name="longitude" required>
-    </div>
-    <div>
-        <label for="gpx_data">GPX Data:</label>
-        <textarea name="gpx_data"></textarea>
-    </div>
-    <div>
-        <input type="submit" value="Create">
+
+    <div class="container mt-5">
+        <h2>Create SAR Call</h2>
+        <form action="{{ url_for('create_sar') }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="start_date">Start Date:</label>
+                <input type="date" name="start_date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="finish_date">Finish Date:</label>
+                <input type="date" name="finish_date" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select name="category" class="form-control">
+                    {% for cat in categories %}
+                        <option value="{{ cat }}">{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="coordinates">Geographical Coordinates:</label>
+                <input type="text" name="coordinates" class="form-control" placeholder="e.g. 40.7128, -74.0060"
+                       required>
+            </div>
+
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea name="description" class="form-control"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="hidden_description">Hidden Description:</label>
+                <textarea name="hidden_description" class="form-control"></textarea>
+            </div>
+
+            <!-- GPX Track Fields (You can expand upon this based on the previous discussions about multiple tracks) -->
+            <div class="form-group">
+                <label for="gpx_file">Upload GPX Track:</label>
+                <input type="file" name="gpx_file">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create</button>
+        </form>
     </div>
     <div id="map" style="width: 600px; height: 400px;"></div>
     <script>
@@ -54,6 +75,15 @@
             document.querySelector('input[name="longitude"]').value = e.latlng.lng;
         });
 
+        {#var gpxTracks = {{ gpx_data | tojson }};#}
+        {#gpxTracks.forEach(function (track) {#}
+        {#    var gpxLayer = new L.GPX(track.data, {async: true, polyline_options: {color: track.color}});#}
+        {#    gpxLayer.on('loaded', function (e) {#}
+        {#        map.fitBounds(e.target.getBounds());#}
+        {#    });#}
+        {#    map.addLayer(gpxLayer);#}
+        {#});#}
+
         // If editing, set the marker to the existing coordinates
         var latInput = document.querySelector('input[name="latitude"]');
         var lngInput = document.querySelector('input[name="longitude"]');
@@ -62,9 +92,26 @@
         }
     </script>
 
-</form>
+    <script>
+        function addTrack() {
+            let trackDiv = document.createElement('div');
+            trackDiv.className = 'gpx_track';
+            trackDiv.innerHTML = `
+            <label>GPX Data:</label>
+            <textarea name="gpx_data[]"></textarea>
+            <label>Color:</label>
+            <input type="color" name="gpx_color[]" value="#ff0000">
+            <button type="button" onclick="removeTrack(this)">Remove</button>
+        `;
+            document.getElementById('gpx_tracks').appendChild(trackDiv);
+        }
+
+        function removeTrack(button) {
+            let trackDiv = button.parentElement;
+            trackDiv.remove();
+        }
+    </script>
 
 
-<a href="/dashboard">Back to Dashboard</a>
-</body>
-</html>
+
+{% endblock %}

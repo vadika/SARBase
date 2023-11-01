@@ -1,39 +1,88 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Title</title>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+{% extends "base.html" %}
+
+{% block title %}
+    Edit SAR record
+{% endblock %}
+
+{% block content %}
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-</head>
-<body>
 
-<div id="map" style="width: 600px; height: 400px;"></div>
-<script>
-    var map = L.map('map').setView([51.505, -0.09], 13); // Default to London, adjust as needed
+    <h2>Edit SAR Call</h2>
+    <div class="container mt-5">
+        <h2>Edit SAR Call</h2>
+        <form action="{{ url_for('edit_sar', id=sar_call.id) }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="start_date">Start Date:</label>
+                <input type="date" name="start_date" class="form-control" value="{{ sar_call.start_date }}" required>
+            </div>
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
+            <div class="form-group">
+                <label for="finish_date">Finish Date:</label>
+                <input type="date" name="finish_date" class="form-control" value="{{ sar_call.finish_date }}" required>
+            </div>
 
-    var marker;
+            <div class="form-group">
+                <label for="category">Category:</label>
+                <select name="category" class="form-control">
+                    {% for cat in categories %}
+                        <option value="{{ cat }}"
+                                {% if cat == sar_call.category %}selected{% endif %}>{{ cat }}</option>
+                    {% endfor %}
+                </select>
+            </div>
 
-    map.on('click', function(e) {
-        if (marker) {
-            map.removeLayer(marker);
-        }
-        marker = L.marker(e.latlng).addTo(map);
-        document.querySelector('input[name="latitude"]').value = e.latlng.lat;
-        document.querySelector('input[name="longitude"]').value = e.latlng.lng;
-    });
+            <div class="form-group">
+                <label for="coordinates">Geographical Coordinates:</label>
+                <input type="text" name="coordinates" class="form-control" value="{{ sar_call.longitude }}" required>
+                <input type="text" name="coordinates" class="form-control" value="{{ sar_call.latitude }}" required>
+            </div>
 
-    // If editing, set the marker to the existing coordinates
-    var latInput = document.querySelector('input[name="latitude"]');
-    var lngInput = document.querySelector('input[name="longitude"]');
-    if (latInput.value && lngInput.value) {
-        marker = L.marker([latInput.value, lngInput.value]).addTo(map);
-    }
-</script>
+            <div class="form-group">
+                <label for="description">Description:</label>
+                <textarea name="description" class="form-control">{{ sar_call.description }}</textarea>
+            </div>
 
-</body>
-</html>
+            <div class="form-group">
+                <label for="hidden_description">Hidden Description:</label>
+                <textarea name="hidden_description" class="form-control">{{ sar_call.hidden_description }}</textarea>
+            </div>
+
+            <!-- GPX Track Fields (You can expand upon this based on the previous discussion about multiple tracks) -->
+            <div class="form-group">
+                <label for="gpx_file">Upload GPX Track:</label>
+                <input type="file" name="gpx_file">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Update</button>
+        </form>
+        <div id="map" style="width: 600px; height: 400px;"></div>
+        <script>
+            var map = L.map('map').setView([51.505, -0.09], 13); // Default to London, adjust as needed
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+            var marker;
+
+            map.on('click', function (e) {
+                if (marker) {
+                    map.removeLayer(marker);
+                }
+                marker = L.marker(e.latlng).addTo(map);
+                document.querySelector('input[name="latitude"]').value = e.latlng.lat;
+                document.querySelector('input[name="longitude"]').value = e.latlng.lng;
+            });
+
+            // If editing, set the marker to the existing coordinates
+            var latInput = document.querySelector('input[name="latitude"]');
+            var lngInput = document.querySelector('input[name="longitude"]');
+            if (latInput.value && lngInput.value) {
+                marker = L.marker([latInput.value, lngInput.value]).addTo(map);
+            }
+        </script>
+    </div>
+
+    <{% endblock %}

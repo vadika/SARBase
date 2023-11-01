@@ -1,6 +1,7 @@
 from flask_login import UserMixin
 from app import db
 
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), unique=True, nullable=False)
@@ -24,3 +25,11 @@ class SARCall(db.Model):
 class SARCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(150), unique=True, nullable=False)
+
+
+class GPSTrack(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    data = db.Column(db.Text, nullable=False)
+    color = db.Column(db.String(7))  # Stores the color as a HEX code like #FF5733
+    sar_call_id = db.Column(db.Integer, db.ForeignKey('sar_call.id'), nullable=False)
+    sar_call = db.relationship('SARCall', backref=db.backref('gps_tracks', lazy=True))
