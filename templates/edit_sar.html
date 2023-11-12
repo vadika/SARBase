@@ -14,30 +14,50 @@
         <h2>Edit SAR Call</h2>
         <form action="{{ url_for('edit_sar', id=sar_call.id) }}" method="post" enctype="multipart/form-data">
             <div class="form-group">
+                <div>
+                    <label for="status">Status:</label>
+                    <select name="status" id="status" class="form-control">
+                        {% for status in statuses %}
+                            <option value="{{ status.id }}" {% if status.id == sar_call.status %}selected{% endif %}>
+                                {{ status.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
                 <label for="start_date">Start Date:</label>
                 <input type="date" name="start_date" class="form-control" value="{{ sar_call.start_date }}" required>
             </div>
 
             <div class="form-group">
                 <label for="finish_date">Finish Date:</label>
-                <input type="date" name="finish_date" class="form-control" value="{{ sar_call.finish_date }}" required>
+                <div>
+                <button type="button" id="today_button" class="btn btn-secondary">Today</button>
+                </div>
+                <input type="date" name="finish_date" id="finish_date" class="form-control" value="{{ sar_call.finish_date }}" >
             </div>
 
             <div class="form-group">
                 <label for="category">Category:</label>
-                <select name="category" class="form-control">
-                    {% for cat in categories %}
-                        <option value="{{ cat }}"
-                                {% if cat == sar_call.category %}selected{% endif %}>{{ cat }}</option>
+                <select name="category" id="category" class="form-control">
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if category.id == sar_call.category %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="form-group">
                 <label for="coordinates">Geographical Coordinates:</label>
-                <input type="text" name="coordinates" class="form-control" value="{{ sar_call.longitude }}" required>
-                <input type="text" name="coordinates" class="form-control" value="{{ sar_call.latitude }}" required>
+                <input type="text" name="longitude" class="form-control" value="{{ sar_call.longitude }}" required>
+                <input type="text" name="latitude" class="form-control" value="{{ sar_call.latitude }}" required>
             </div>
+
+         <div class="form-group">
+                <label for="title">Title:</label>
+                <input type="text" name="title" class="form-control" value="{{ sar_call.title }}" required>
+            </div>
+
 
             <div class="form-group">
                 <label for="description">Description:</label>
@@ -45,15 +65,15 @@
             </div>
 
             <div class="form-group">
-                <label for="hidden_description">Hidden Description:</label>
-                <textarea name="hidden_description" class="form-control">{{ sar_call.hidden_description }}</textarea>
+                <label for="description_hidden">Hidden Description:</label>
+                <textarea name="description_hidden" class="form-control">{{ sar_call.description_hidden }}</textarea>
             </div>
 
-            <!-- GPX Track Fields (You can expand upon this based on the previous discussion about multiple tracks) -->
-            <div class="form-group">
-                <label for="gpx_file">Upload GPX Track:</label>
-                <input type="file" name="gpx_file">
-            </div>
+{#            <!-- GPX Track Fields (You can expand upon this based on the previous discussion about multiple tracks) -->#}
+{#            <div class="form-group">#}
+{#                <label for="gpx_file">Upload GPX Track:</label>#}
+{#                <input type="file" name="gpx_file">#}
+{#            </div>#}
 
             <button type="submit" class="btn btn-primary">Update</button>
         </form>
@@ -83,6 +103,17 @@
                 marker = L.marker([latInput.value, lngInput.value]).addTo(map);
             }
         </script>
+    <script>
+    document.getElementById('today_button').addEventListener('click', function() {
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0'); // January is 0!
+        var yyyy = today.getFullYear();
+        today = yyyy + '-' + mm + '-' + dd;
+        document.getElementById('finish_date').value = today;
+    });
+</script>
+
     </div>
 
     <{% endblock %}
