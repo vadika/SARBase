@@ -104,3 +104,40 @@ def delete_sar(id):
     flash('SAR call record deleted successfully!', 'success')
     return redirect(url_for('list_sar'))
 
+
+@app.route('/add_comment/<int:sar_call_id>', methods=['POST'])
+@login_required
+def add_comment(sar_call_id):
+    text = request.form.get('text')
+    gpx_file = request.files.get('gpx_file')
+    gpx_data = gpx_file.read().decode("utf-8") if gpx_file else None
+    comment = Comment(text=text, gpx_data=gpx_data, user_id=current_user.id, sar_call_id=sar_call_id)
+    db.session.add(comment)
+    db.session.commit()
+    return redirect(url_for('view_sar', sar_call_id=sar_call_id))
+
+@app.route('/edit_comment/<int:comment_id>', methods=['GET', 'POST'])
+@login_required
+def edit_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    if current_user.id != comment.user_id and current_user.id != 1 and current_user.id != comment.sar_call.user_id:
+        abort(403)
+    # Handle the form submission and save changes
+    if request.method == 'POST':
+        comment.text = request.form.get('text')
+        gpx_file = request.files.get('gpx_file')
+        if gpx_file:
+            comment.gpx_data = gpx_file.read().decode("utf-8")
+        db.session.commit()
+        return redirect(url_for('view_sar', sar_call_id=comment.sar_call_id))
+
+
+@app.route('/delete_comment/<int:comment_id>', methods=['POST'])
+@login_required
+def delete_comment(comment_id):
+    comment = Comment.query.get_or_404(comment_id)
+    if current_user.id != comment.user_id and current_user.id != 1 and current_user.id != comment.sar_call.user_id:
+        abort(403)
+    db.session.delete(comment)
+    db.session.commit()
+    return redirect(url_for('view_sar', sar_call_id=comment.sar_call_id))

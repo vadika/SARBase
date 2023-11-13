@@ -25,12 +25,47 @@
     </div>
 
 
+
   <div id="map" class="mb-4"></div>
     <div>
         <a href="{{ url_for('edit_sar', id=sar.id) }}" class="btn btn-primary">Edit</a>
         <a href="{{ url_for('delete_sar', id=sar.id) }}" class="btn btn-danger">Delete</a>
     </div>
 </div>
+
+    <!-- Display Comments -->
+{% for comment in sar_call.comments %}
+    <div class="comment">
+        <strong>{{ comment.user.username }}</strong>:
+        <p>{{ comment.text }}</p>
+        {% if comment.gpx_data %}
+            <!-- Display the GPX data on the map -->
+        {% endif %}
+        {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar_call.user_id %}
+            <a href="{{ url_for('edit_comment', comment_id=comment.id) }}">Edit</a>
+            <a href="{{ url_for('delete_comment', comment_id=comment.id) }}">Delete</a>
+        {% endif %}
+    </div>
+{% endfor %}
+
+<!-- Add Comment Form -->
+<form action="{{ url_for('add_comment', sar_call_id=sar_call.id) }}" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="text">Comment:</label>
+        <textarea name="text" class="form-control"></textarea>
+    </div>
+    <div class="form-group">
+        <label for="gpx_file">GPX File:</label>
+        <input type="file" name="gpx_file">
+    </div>
+    <button type="submit" class="btn btn-primary">Add Comment</button>
+</form>
+
+
+
+
+
+
     <script>
         var map = L.map('map').setView([{{ sar.latitude }}, {{ sar.longitude }}], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
