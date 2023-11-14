@@ -11,6 +11,8 @@ class User(UserMixin, db.Model):
     password = db.Column(db.String(50))
     role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
     role = db.relationship('Role', backref=db.backref('users', lazy='dynamic'))
+    def __repr__(self):
+        return self.username
 
 class Role(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -32,8 +34,7 @@ class SARCall(db.Model):
     description = db.Column(db.Text, nullable=True)
     description_hidden = db.Column(db.Text, nullable=True)
     search_manager_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    gpx_data = db.Column(db.Text, nullable=True)  # This will store GPX data as a text
-
+    search_manager = db.relationship('User', backref=db.backref('sar_calls', lazy=True))
 
 class SARCategory(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True, nullable=False)
@@ -63,7 +64,7 @@ class GPSTrack(db.Model):
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     text = db.Column(db.Text, nullable=True)
-    gpx_data = db.Column(db.Text, nullable=True)
+    gpx_data = db.Column(db.Text (length=4294967295) , nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref=db.backref('comments', lazy=True))
     sar_call_id = db.Column(db.Integer, db.ForeignKey('sar_call.id'), nullable=False)

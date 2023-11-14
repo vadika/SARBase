@@ -6,65 +6,102 @@
 
 {% block content %}
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <style>
-        #map { height: 400px; }
-        .button { margin: 5px; }
+        #map {
+            height: 400px;
+        }
+
+        .button {
+            margin: 5px;
+        }
     </style>
 
-<div class="container mt-4">
-    <h1 class="mb-4">SAR Job Details</h1>
-    <div class="card mb-4">
-        <div class="card-body">
-            <p><strong>ID:</strong> {{ sar.id }}</p>
-            <p><strong>Start Date:</strong> {{ sar.start_date }}</p>
-            <p><strong>Manager:</strong> {{ sar.manager }}</p>
-            <!-- Other SAR details -->
+    <div class="container mt-4">
+        <h1 class="mb-4">SAR Job Details</h1>
+        <div class="card mb-4">
+            <div class="card-body">
+                <p><strong>ID:</strong> {{ sar.id }}</p>
+                <p><strong>Start Date:</strong> {{ sar.start_date }}</p>
+                <p><strong>Manager:</strong> {{ sar.manager }}</p>
+                <!-- Other SAR details -->
+            </div>
         </div>
+
+        <div>
+            <a href="{{ url_for('edit_sar', id=sar.id) }}" class="btn btn-primary">Edit</a>
+            <a href="{{ url_for('delete_sar', id=sar.id) }}" class="btn btn-danger">Delete</a>
+        </div>
+
+        <div id="map" class="mb-4"></div>
+
+
+        <!-- Display Comments -->
+        {% for comment in sar.comments %}
+            <div class="comment">
+                <strong>{{ comment.user.username }}</strong>:
+                <p id="comment-text-{{ comment.id }}">{{ comment.text }}</p>
+
+                {% if comment.gpx_data %}
+                    <!-- Display the GPX data on the map -->
+                {% endif %}
+                {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar.user_id %}
+                    <button class="edit-comment-btn" data-comment-id="{{ comment.id }}"
+                            data-comment-text="{{ comment.text }}">Edit
+                    </button>
+
+                    <button class="delete-comment-btn">
+                        <a href="{{ url_for('delete_comment', id=comment.id) }}">Delete</a>
+                    </button>
+
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <!-- Edit Comment Modal -->
+        <div class="modal fade" id="editCommentModal" tabindex="-1" aria-labelledby="editCommentModalLabel"
+             aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editCommentModalLabel">Edit Comment</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editCommentForm">
+                            <div class="form-group">
+                                <label for="commentText" class="col-form-label">Comment:</label>
+                                <textarea class="form-control" id="commentText"></textarea>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" id="saveComment">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Add Comment Form -->
+        <form action="{{ url_for('add_comment', sar_call_id=sar.id) }}" method="post" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="text">Comment:</label>
+                <textarea name="text" class="form-control"></textarea>
+            </div>
+            <div class="form-group">
+                <label for="gpx_file">GPX File:</label>
+                <input type="file" name="gpx_file">
+            </div>
+            <button type="submit" class="btn btn-primary">Add Comment</button>
+        </form>
+
     </div>
-
-
-
-  <div id="map" class="mb-4"></div>
-    <div>
-        <a href="{{ url_for('edit_sar', id=sar.id) }}" class="btn btn-primary">Edit</a>
-        <a href="{{ url_for('delete_sar', id=sar.id) }}" class="btn btn-danger">Delete</a>
-    </div>
-</div>
-
-    <!-- Display Comments -->
-{% for comment in sar_call.comments %}
-    <div class="comment">
-        <strong>{{ comment.user.username }}</strong>:
-        <p>{{ comment.text }}</p>
-        {% if comment.gpx_data %}
-            <!-- Display the GPX data on the map -->
-        {% endif %}
-        {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar_call.user_id %}
-            <a href="{{ url_for('edit_comment', comment_id=comment.id) }}">Edit</a>
-            <a href="{{ url_for('delete_comment', comment_id=comment.id) }}">Delete</a>
-        {% endif %}
-    </div>
-{% endfor %}
-
-<!-- Add Comment Form -->
-<form action="{{ url_for('add_comment', sar_call_id=sar_call.id) }}" method="post" enctype="multipart/form-data">
-    <div class="form-group">
-        <label for="text">Comment:</label>
-        <textarea name="text" class="form-control"></textarea>
-    </div>
-    <div class="form-group">
-        <label for="gpx_file">GPX File:</label>
-        <input type="file" name="gpx_file">
-    </div>
-    <button type="submit" class="btn btn-primary">Add Comment</button>
-</form>
-
-
-
-
-
 
     <script>
         var map = L.map('map').setView([{{ sar.latitude }}, {{ sar.longitude }}], 13);
@@ -73,6 +110,42 @@
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
         L.marker([{{ sar.latitude }}, {{ sar.longitude }}]).addTo(map);
+    </script>
+
+
+    <script>
+        var commentId;  // Declare this outside of the .edit-comment-btn click handler
+        var commentText;  // Declare this outside of the .edit-comment-btn click handler
+        $(document).ready(function () {
+            $('.edit-comment-btn').on('click', function () {
+                // Get the comment data
+                commentId = $(this).data('comment-id');
+                commentText = $(this).data('comment-text');
+
+                // Set the comment data in the modal
+                $('#commentText').val(commentText);
+                $('#editCommentModal').modal('show');
+
+                // Save changes
+                $('#saveComment').on('click', function () {
+                    $.ajax({
+                        url: '/edit_comment/' + commentId,
+                        method: 'POST',
+                        data: {comment: $('#commentText').val()},
+                        success: function (response) {
+                            // Update the comment display on the page
+                            $('#comment-text-' + commentId).text( $('#commentText').val());
+                            $('#editCommentModal').modal('hide');
+                            // Update the comment display on the page as needed
+                        },
+                        error: function () {
+                            // Handle error
+                            alert("Error updating comment");
+                        }
+                    });
+                });
+            });
+        });
     </script>
 
 

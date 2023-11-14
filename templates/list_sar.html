@@ -23,7 +23,7 @@
             </thead>
             <tbody>
             {% for sar in sar_calls %}
-                    <tr class="clickable-row" data-href="{{ url_for('sar_details', id=sar.SARCall.id) }}">
+                <tr class="clickable-row" data-href="{{ url_for('sar_details', id=sar.SARCall.id) }}">
                     <td>{{ sar.SARCall.id }}</td>
                     <td>{{ sar.SARCall.title }}</td>
                     <td>{{ sar.SARCall.start_date }}</td>
@@ -48,11 +48,11 @@
     </div>
 
     <script>
-    document.querySelectorAll('.clickable-row').forEach(row => {
-        row.addEventListener('click', () => {
-            window.location.href = row.dataset.href;
+        document.querySelectorAll('.clickable-row').forEach(row => {
+            row.addEventListener('click', () => {
+                window.location.href = row.dataset.href;
+            });
         });
-    });
     </script>
 
 

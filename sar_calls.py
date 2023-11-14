@@ -1,8 +1,8 @@
 from app import app, db
-from flask import request, redirect, flash, render_template, url_for
+from flask import request, redirect, flash, render_template, url_for, jsonify
 from flask_login import login_required, current_user
 from dateutil import parser
-from models import SARCall, GPSTrack, SARCategory, SARStatus, User
+from models import SARCall, Comment,  GPSTrack, SARCategory, SARStatus, User
 
 
 @app.route('/create_sar', methods=['GET', 'POST'])
@@ -114,30 +114,29 @@ def add_comment(sar_call_id):
     comment = Comment(text=text, gpx_data=gpx_data, user_id=current_user.id, sar_call_id=sar_call_id)
     db.session.add(comment)
     db.session.commit()
-    return redirect(url_for('view_sar', sar_call_id=sar_call_id))
+    return redirect(url_for('sar_details', id=sar_call_id))
 
-@app.route('/edit_comment/<int:comment_id>', methods=['GET', 'POST'])
+
+@app.route('/edit_comment/<int:comment_id>', methods=['POST'])
 @login_required
 def edit_comment(comment_id):
     comment = Comment.query.get_or_404(comment_id)
-    if current_user.id != comment.user_id and current_user.id != 1 and current_user.id != comment.sar_call.user_id:
-        abort(403)
-    # Handle the form submission and save changes
-    if request.method == 'POST':
-        comment.text = request.form.get('text')
-        gpx_file = request.files.get('gpx_file')
-        if gpx_file:
-            comment.gpx_data = gpx_file.read().decode("utf-8")
-        db.session.commit()
-        return redirect(url_for('view_sar', sar_call_id=comment.sar_call_id))
+    # Permission checks...
 
+    comment_text = request.form.get('comment')
+    comment.text = comment_text
+    db.session.commit()
 
-@app.route('/delete_comment/<int:comment_id>', methods=['POST'])
+    # return jsonify(success=True)  # or return relevant response
+    return redirect(url_for('sar_details', id=comment.sar_call_id))
+
+@app.route('/delete_comment/<int:id>', methods=['GET', 'POST'])
 @login_required
-def delete_comment(comment_id):
-    comment = Comment.query.get_or_404(comment_id)
-    if current_user.id != comment.user_id and current_user.id != 1 and current_user.id != comment.sar_call.user_id:
-        abort(403)
+def delete_comment(id):
+    comment = Comment.query.get_or_404(id)
+    # if current_user.id != comment.user_id and current_user.id != 1 and current_user.id != comment.sar_call.user_id:
+    #     abort(403)
     db.session.delete(comment)
     db.session.commit()
-    return redirect(url_for('view_sar', sar_call_id=comment.sar_call_id))
+    flash('Comment deleted successfully!', 'success')
+    return redirect(url_for('sar_details', id=comment.sar_call_id))
