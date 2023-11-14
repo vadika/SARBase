@@ -9,6 +9,10 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+
+    <!-- Include leaflet-gpx plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.5.1/gpx.min.js"></script>
+
     <style>
         #map {
             height: 400px;
@@ -17,6 +21,10 @@
         .button {
             margin: 5px;
         }
+
+        .comment-text {
+            white-space: pre-line;
+        }
     </style>
 
     <div class="container mt-4">
@@ -24,6 +32,10 @@
         <div class="card mb-4">
             <div class="card-body">
                 <p><strong>ID:</strong> {{ sar.id }}</p>
+                <div>
+                    <p>Created at: {{ sar.created }}</p>
+                    <p>Last updated: {{ sar.updated }}</p>
+                </div>
                 <p><strong>Start Date:</strong> {{ sar.start_date }}</p>
                 <p><strong>Manager:</strong> {{ sar.manager }}</p>
                 <!-- Other SAR details -->
@@ -42,7 +54,11 @@
         {% for comment in sar.comments %}
             <div class="comment">
                 <strong>{{ comment.user.username }}</strong>:
-                <p id="comment-text-{{ comment.id }}">{{ comment.text }}</p>
+                <div>
+                    <p>Comment created at: {{ comment.created }}</p>
+                    <p>Last updated: {{ comment.updated }}</p>
+                </div>
+                <div class="comment-text"><p id="comment-text-{{ comment.id }}">{{ comment.text }}</p></div>
 
                 {% if comment.gpx_data %}
                     <!-- Display the GPX data on the map -->
@@ -51,8 +67,13 @@
                     <button class="edit-comment-btn" data-comment-id="{{ comment.id }}"
                             data-comment-text="{{ comment.text }}">Edit
                     </button>
+                    <!-- Button to Open GPX Upload Modal -->
+                    <button type="button" class="gpx-upload-button" data-toggle="modal" data-target="#uploadGPXModal"
+                            data-comment-id="{{ comment.id }}">
+                        Upload GPX File
+                    </button>
 
-                    <button class="delete-comment-btn">
+                    <button type="button" class="delete-comment-btn">
                         <a href="{{ url_for('delete_comment', id=comment.id) }}">Delete</a>
                     </button>
 
@@ -95,21 +116,61 @@
                 <textarea name="text" class="form-control"></textarea>
             </div>
             <div class="form-group">
-                <label for="gpx_file">GPX File:</label>
-                <input type="file" name="gpx_file">
+
+
             </div>
             <button type="submit" class="btn btn-primary">Add Comment</button>
         </form>
 
     </div>
 
+    <!-- GPX File Upload Modal -->
+    <div class="modal fade" id="uploadGPXModal" tabindex="-1" aria-labelledby="uploadGPXModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadGPXModalLabel">Upload GPX File</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="uploadGPXForm" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="gpxFileName">Description: </label>
+                            <input type="text" class="form-control" id="gpxFileName" name="gpxFileName" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="gpxFile">GPX File</label>
+                            <input type="file" class="form-control" id="gpxFile" name="gpxFile" required>
+                        </div>
+                    </div>
+                    <input type="hidden" id="commentIdForGPX" name="commentId">
+                    <input type="hidden" id="sarIdForGPX" name="sarId" value="{{ sar.id }}">
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Upload</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
     <script>
+        var gpxData = {{ gpx_files | tojson }};
+
         var map = L.map('map').setView([{{ sar.latitude }}, {{ sar.longitude }}], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
         }).addTo(map);
         L.marker([{{ sar.latitude }}, {{ sar.longitude }}]).addTo(map);
+
+        gpxData.forEach(function (gpxFile) {
+            new L.GPX(gpxFile.gpx_data, {async: true}).on('loaded', function (e) {
+                map.fitBounds(e.target.getBounds());
+            }).addTo(map);
+        });
     </script>
 
 
@@ -134,7 +195,8 @@
                         data: {comment: $('#commentText').val()},
                         success: function (response) {
                             // Update the comment display on the page
-                            $('#comment-text-' + commentId).text( $('#commentText').val());
+                            $('#comment-text-' + commentId).text($('#commentText').val());
+                            $('button.edit-comment-btn[data-comment-id="' + commentId + '"]').data('comment-text', $('#commentText').val());
                             $('#editCommentModal').modal('hide');
                             // Update the comment display on the page as needed
                         },
@@ -147,6 +209,44 @@
             });
         });
     </script>
+
+
+    <script>
+        var commentId;
+
+        $('.gpx-upload-button').on('click', function () {
+            var commentId = $(this).data('comment-id');
+            $('#commentIdForGPX').val(commentId);
+        });
+
+        $(document).ready(function () {
+            {#commentId = $(this).data('comment-id');#}
+            {#console.log(commentId);#}
+            // Handle form submission
+            $('#uploadGPXForm').on('submit', function (e) {
+                e.preventDefault();
+                var formData = new FormData(this);
+
+                $.ajax({
+                    url: '/upload_gpx',  // Update with the correct route
+                    type: 'POST',
+                    data: formData,
+                    contentType: false,
+                    processData: false,
+                    success: function (response) {
+                        // Handle success - Close modal, Update the map with new GPX data
+                        $('#uploadGPXModal').modal('hide');
+                    },
+                    error: function () {
+                        // Handle error
+                        alert("Error uploading GPX file");
+                    }
+                });
+            });
+        });
+    </script>
+
+
 
 
 {% endblock %}

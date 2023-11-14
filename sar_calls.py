@@ -1,8 +1,9 @@
-from app import app, db
+from dateutil import parser
 from flask import request, redirect, flash, render_template, url_for, jsonify
 from flask_login import login_required, current_user
-from dateutil import parser
-from models import SARCall, Comment,  GPSTrack, SARCategory, SARStatus, User
+
+from app import app, db
+from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User
 
 
 @app.route('/create_sar', methods=['GET', 'POST'])
@@ -49,7 +50,9 @@ def create_sar():
 @app.route('/list_sar')
 @login_required
 def list_sar():
-    sar_calls = SARCall.query.join(User, SARCall.search_manager_id == User.id).join(SARCategory, SARCall.category == SARCategory.id).add_columns(SARCategory, User, SARCall).all()
+    sar_calls = SARCall.query.join(User, SARCall.search_manager_id == User.id).join(SARCategory,
+                                                                                    SARCall.category == SARCategory.id).add_columns(
+        SARCategory, User, SARCall).all()
     return render_template('list_sar.html', sar_calls=sar_calls)
 
 
@@ -74,7 +77,6 @@ def edit_sar(id):
         sar_call.description_hidden = request.form.get('description_hidden')
         # sar_call.gpx_data = request.form.get('gpx_data')
 
-
         db.session.commit()
         flash('SAR call updated successfully!', 'success')
         return redirect(url_for('list_sar'))
@@ -84,15 +86,14 @@ def edit_sar(id):
     if sar_call.finish_date:
         sar_call.finish_date = sar_call.finish_date.strftime('%Y-%m-%d')
 
-    return render_template('edit_sar.html', sar_call=sar_call,categories=categories, statuses=statuses)
-
+    return render_template('edit_sar.html', sar_call=sar_call, categories=categories, statuses=statuses)
 
 
 @app.route('/sar_details/<int:id>')
 def sar_details(id):
     sar = SARCall.query.get_or_404(id)  # Fetch the SARCall record or return 404
-    return render_template('sar_details.html', sar=sar)
-
+    gpx_files = GPSTrack.query.filter_by(sar_call_id=id).all()
+    return render_template('sar_details.html', sar=sar, gpx_files=gpx_files)
 
 
 @app.route('/delete_sar/<int:id>')
@@ -130,6 +131,7 @@ def edit_comment(comment_id):
     # return jsonify(success=True)  # or return relevant response
     return redirect(url_for('sar_details', id=comment.sar_call_id))
 
+
 @app.route('/delete_comment/<int:id>', methods=['GET', 'POST'])
 @login_required
 def delete_comment(id):
@@ -140,3 +142,24 @@ def delete_comment(id):
     db.session.commit()
     flash('Comment deleted successfully!', 'success')
     return redirect(url_for('sar_details', id=comment.sar_call_id))
+
+
+@app.route('/upload_gpx', methods=['POST'])
+@login_required
+def upload_gpx():
+    # Retrieve file and other data from the form
+    file_name = request.form.get('gpxFileName')
+    gpx_file = request.files.get('gpxFile')
+    id = request.form.get('commentId')
+    sar_id = request.form.get('sarId')
+
+    # You need to implement logic to parse and store the GPX file
+    # For example, read the file content
+    gpx_data = gpx_file.read()
+
+    # Create a new GPSTrack object and save it
+    new_gpx_file = GPSTrack(comment_id=id, sar_call_id=sar_id, file_name=file_name, gpx_data=gpx_data)
+    db.session.add(new_gpx_file)
+    db.session.commit()
+
+    return jsonify({'message': 'GPX file uploaded successfully'})
