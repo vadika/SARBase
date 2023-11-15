@@ -92,12 +92,21 @@ def edit_sar(id):
 @app.route('/sar_details/<int:id>')
 def sar_details(id):
     sar = SARCall.query.get_or_404(id)  # Fetch the SARCall record or return 404
-    gpx_files = [id[0] for id in GPSTrack.query.with_entities(GPSTrack.id).filter_by(sar_call_id=id).all()]  # Fetch all GPX files for this SARCall
+    gpx_files = [id[0] for id in GPSTrack.query.with_entities(GPSTrack.id).filter_by(
+        sar_call_id=id).all()]  # Fetch all GPX files for this SARCall
+    comments_with_gpx = []
 
-    # Assuming each comment has a relationship to GPXFile
-    print (gpx_files)
+    for comment in sar.comments:
+        gpx_tracks = GPSTrack.query.filter_by(comment_id=comment.id).all()
+        for track in gpx_tracks:
+            comments_with_gpx.append({
+            "id": track.id,
+            "comment_id": comment.id,
+            "name": track.file_name,
+            "comment": track.gpx_name
+            })
 
-    return render_template('sar_details.html', sar=sar, gpx_ids=gpx_files)
+    return render_template('sar_details.html', sar=sar, gpx_ids=gpx_files, comments_with_gpx=comments_with_gpx)
 
 
 @app.route('/delete_sar/<int:id>')
@@ -167,7 +176,6 @@ def upload_gpx():
     db.session.commit()
 
     return jsonify({'message': 'GPX file uploaded successfully'})
-
 
 
 @app.route('/get_gpx/<int:gpx_id>')
