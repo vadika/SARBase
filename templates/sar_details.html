@@ -60,9 +60,6 @@
                 </div>
                 <div class="comment-text"><p id="comment-text-{{ comment.id }}">{{ comment.text }}</p></div>
 
-                {% if comment.gpx_data %}
-                    <!-- Display the GPX data on the map -->
-                {% endif %}
                 {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar.user_id %}
                     <button class="edit-comment-btn" data-comment-id="{{ comment.id }}"
                             data-comment-text="{{ comment.text }}">Edit
@@ -157,7 +154,20 @@
 
 
     <script>
-        var gpxData = {{ gpx_files | tojson }};
+
+        // Load GPX file and add to map
+        function loadAndDisplayGPX(gpxId) {
+            fetch('/get_gpx/' + gpxId)
+                .then(response => response.text())
+                .then(gpxData => {
+                    new L.GPX(gpxData, {async: true}).on('loaded', function (e) {
+                        map.fitBounds(e.target.getBounds());
+                    }).addTo(map);
+                })
+                .catch(error => console.error('Error loading GPX file:', error));
+        }
+
+        var gpxData = {{ gpx_ids | tojson }};
 
         var map = L.map('map').setView([{{ sar.latitude }}, {{ sar.longitude }}], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -166,11 +176,10 @@
         }).addTo(map);
         L.marker([{{ sar.latitude }}, {{ sar.longitude }}]).addTo(map);
 
-        gpxData.forEach(function (gpxFile) {
-            new L.GPX(gpxFile.gpx_data, {async: true}).on('loaded', function (e) {
-                map.fitBounds(e.target.getBounds());
-            }).addTo(map);
+        gpxData.forEach(function (id) {
+            loadAndDisplayGPX(id);
         });
+
     </script>
 
 

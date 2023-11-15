@@ -1,5 +1,5 @@
 from dateutil import parser
-from flask import request, redirect, flash, render_template, url_for, jsonify
+from flask import request, redirect, flash, render_template, url_for, jsonify, Response
 from flask_login import login_required, current_user
 
 from app import app, db
@@ -92,8 +92,12 @@ def edit_sar(id):
 @app.route('/sar_details/<int:id>')
 def sar_details(id):
     sar = SARCall.query.get_or_404(id)  # Fetch the SARCall record or return 404
-    gpx_files = GPSTrack.query.filter_by(sar_call_id=id).all()
-    return render_template('sar_details.html', sar=sar, gpx_files=gpx_files)
+    gpx_files = [id[0] for id in GPSTrack.query.with_entities(GPSTrack.id).filter_by(sar_call_id=id).all()]  # Fetch all GPX files for this SARCall
+
+    # Assuming each comment has a relationship to GPXFile
+    print (gpx_files)
+
+    return render_template('sar_details.html', sar=sar, gpx_ids=gpx_files)
 
 
 @app.route('/delete_sar/<int:id>')
@@ -163,3 +167,11 @@ def upload_gpx():
     db.session.commit()
 
     return jsonify({'message': 'GPX file uploaded successfully'})
+
+
+
+@app.route('/get_gpx/<int:gpx_id>')
+@login_required
+def get_gpx(gpx_id):
+    gpx_file = GPSTrack.query.get_or_404(gpx_id)
+    return Response(gpx_file.gpx_data, mimetype='application/gpx+xml')
