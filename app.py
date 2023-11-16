@@ -1,3 +1,4 @@
+import os
 from flask import Flask, redirect, url_for, request, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -25,7 +26,8 @@ def get_locale():
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
 #app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://sarbaseuser:password@localhost/sarbaseapp'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://sarbaseuser:password@localhost/sarbaseapp'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+mysqlconnector://sarbaseuser:password@localhost/sarbaseapp')
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 babel= Babel(app)
 babel.init_app(app, locale_selector=get_locale)
