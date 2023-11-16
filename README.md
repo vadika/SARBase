@@ -15,3 +15,10 @@ An attempt to create search and rescue database for logging SAR jobs and activit
     mysql> EXIT;
 
 
+# How to recompile the new translations
+
+    pybabel extract -F babel.cfg -o messages.pot .
+    pybabel update -i messages.pot -d translations
+    # Update the .po files with new translations
+    ...
+    pybabel compile -d translations
