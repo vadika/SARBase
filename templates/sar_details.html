@@ -53,37 +53,41 @@
         <!-- Display Comments -->
         {% for comment in sar.comments %}
             <div class="comment">
-                <strong>{{ comment.user.username }}</strong>:
-                <div>
-                    <p>Comment created at: {{ comment.created }}</p>
-                    <p>Last updated: {{ comment.updated }}</p>
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <strong>{{ comment.user.full_name }}</strong>: at {{ comment.created }} , updated {{ comment.updated }}
+                        <div class="card mb-5">
+                            <div class="card-body">
+                                <div class="comment-text"><p id="comment-text-{{ comment.id }}">{{ comment.text }}</p></div>
+                            </div>
+                        </div>
+                        {% for gpx_track in comments_with_gpx %}
+                            {% if gpx_track.comment_id == comment.id %}
+                                <li>
+                                    <a href="{{ url_for('get_gpx', gpx_id=gpx_track.id) }}">{{ gpx_track.name }}</a>: {{ gpx_track.comment }}
+                                </li>
+                            {% endif %}
+
+                        {% endfor %}
+
+                        {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar.user_id %}
+                            <button class="edit-comment-btn" data-comment-id="{{ comment.id }}"
+                                    data-comment-text="{{ comment.text }}">Edit
+                            </button>
+                            <!-- Button to Open GPX Upload Modal -->
+                            <button type="button" class="gpx-upload-button" data-toggle="modal"
+                                    data-target="#uploadGPXModal"
+                                    data-comment-id="{{ comment.id }}">
+                                Upload GPX File
+                            </button>
+
+                            <button type="button" class="delete-comment-btn">
+                                <a href="{{ url_for('delete_comment', id=comment.id) }}">Delete</a>
+                            </button>
+
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="comment-text"><p id="comment-text-{{ comment.id }}">{{ comment.text }}</p></div>
-
-                {% for gpx_track in comments_with_gpx %}
-                    {% if gpx_track.comment_id == comment.id %}
-                    <li>
-                        <a href="{{ url_for('get_gpx', gpx_id=gpx_track.id) }}">{{ gpx_track.name }}</a>: {{gpx_track.comment}}
-                    </li>
-                    {% endif %}
-
-                {% endfor %}
-
-                {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar.user_id %}
-                    <button class="edit-comment-btn" data-comment-id="{{ comment.id }}"
-                            data-comment-text="{{ comment.text }}">Edit
-                    </button>
-                    <!-- Button to Open GPX Upload Modal -->
-                    <button type="button" class="gpx-upload-button" data-toggle="modal" data-target="#uploadGPXModal"
-                            data-comment-id="{{ comment.id }}">
-                        Upload GPX File
-                    </button>
-
-                    <button type="button" class="delete-comment-btn">
-                        <a href="{{ url_for('delete_comment', id=comment.id) }}">Delete</a>
-                    </button>
-
-                {% endif %}
             </div>
         {% endfor %}
 
