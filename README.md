@@ -22,3 +22,7 @@ An attempt to create search and rescue database for logging SAR jobs and activit
     # Update the .po files with new translations
     ...
     pybabel compile -d translations
+
+# How to run the application with docker-compose
+
+    docker-compose up --build
