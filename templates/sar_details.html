@@ -28,17 +28,42 @@
     </style>
 
     <div class="container mt-4">
-        <h1 class="mb-4">SAR Job Details</h1>
+        <h2 class="mb-4">#{{ sar.id }} : {{ sar.title }}</h2>
         <div class="card mb-4">
             <div class="card-body">
-                <p><strong>ID:</strong> {{ sar.id }}</p>
-                <div>
-                    <p>Created at: {{ sar.created }}</p>
-                    <p>Last updated: {{ sar.updated }}</p>
-                </div>
-                <p><strong>Start Date:</strong> {{ sar.start_date }}</p>
-                <p><strong>Manager:</strong> {{ sar.manager }}</p>
-                <!-- Other SAR details -->
+                <table>
+                    <tr>
+                        <td>
+                            <div class="card-mb5">
+                                <div class="card-body">
+                                    <div>
+                                        <p>Created at: {{ sar.created }}</p>
+                                        <p>Last updated: {{ sar.updated }}</p>
+                                    </div>
+                                    <p>Status: {{ sar.status }}</p>
+                                    <p>Category: {{ sar.category }}</p>
+                                    <p><strong>Start Date:</strong> {{ sar.start_date }}</p>
+                                    <p><strong>Finish Date:</strong> {{ sar.finish_date }}</p>
+                                    <p>Result: {{ sar.result }}</p>
+                                    <p><strong>Manager:</strong> {{ sar.manager_id }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="card-mb5">
+                                <div class="card-body">
+                                    <p>IPP longitude: {{ sar.longitude }} </p>
+                                    <p>IPP latitude: {{ sar.latitude }}</p>
+                                    <p>Longitude found: {{ sar.longitude_found }}</p>
+                                    <p>Latitude found: {{ sar.latitude_found }}</p>
+                                    <p>Description: {{ sar.description }}</p>
+                                    <p>Description private: {{ sar.description_hidden }}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <!-- Other SAR details -->
+                    </tr>
+                </table>
             </div>
         </div>
 
@@ -55,10 +80,12 @@
             <div class="comment">
                 <div class="card mb-4">
                     <div class="card-body">
-                        <strong>{{ comment.user.full_name }}</strong>: at {{ comment.created }} , updated {{ comment.updated }}
+                        <strong>{{ comment.user.full_name }}</strong>: at {{ comment.created }} ,
+                        updated {{ comment.updated }}
                         <div class="card mb-5">
                             <div class="card-body">
-                                <div class="comment-text"><p id="comment-text-{{ comment.id }}">{{ comment.text }}</p></div>
+                                <div class="comment-text"><p id="comment-text-{{ comment.id }}">{{ comment.text }}</p>
+                                </div>
                             </div>
                         </div>
                         {% for gpx_track in comments_with_gpx %}

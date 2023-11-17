@@ -19,14 +19,12 @@ metadata = MetaData(naming_convention=convention)
 
 
 def get_locale():
-    return session.get('language', request.accept_languages.best_match(['en', 'ru', 'et', 'lv', 'fi']))
+    return session.get('language', request.accept_languages.best_match(['en', 'ru', 'ee', 'lv', 'fi','se','lt']))
 
 
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///db.sqlite3'
-#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+mysqlconnector://sarbaseuser:password@localhost/sarbaseapp'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+mysqlconnector://sarbaseuser:password@localhost/sarbaseapp')
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
 babel= Babel(app)
@@ -53,7 +51,6 @@ def hello_world():  # put application's code here
 def set_language(lang_code):
     session['language'] = lang_code
     return redirect(request.referrer or url_for('dashboard'))
-
 
 
 
