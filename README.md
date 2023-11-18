@@ -26,3 +26,8 @@ An attempt to create search and rescue database for logging SAR jobs and activit
 # How to run the application with docker-compose
 
     docker-compose up --build
+
+# Database migration with docker environment    
+
+        docker-compose exec web flask db migrate
+        docker-compose exec web flask db upgrade

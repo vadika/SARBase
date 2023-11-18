@@ -11,3 +11,5 @@ mysql_connector_python==8.2.0
 gpxpy==1.6.1
 geopy==2.4.0
 flask_babel==4.0.0
+#flask_debugtoolbar==0.13.1
+

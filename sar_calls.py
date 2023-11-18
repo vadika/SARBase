@@ -1,9 +1,10 @@
 from dateutil import parser
 from flask import request, redirect, flash, render_template, url_for, jsonify, Response
 from flask_login import login_required, current_user
+from sqlalchemy import or_
 
 from app import app, db
-from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User
+from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User, Role
 
 
 @app.route('/create_sar', methods=['GET', 'POST'])
@@ -11,6 +12,8 @@ from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User
 def create_sar():
     categories = SARCategory.query.all()
     statuses = SARStatus.query.order_by('id').all()
+    managers = User.query.join(Role).filter(or_(Role.name == 'search manager', Role.name =='admin')).all()
+
 
     if request.method == 'POST':
         start_date = parser.parse(request.form.get('start_date'))
@@ -31,26 +34,25 @@ def create_sar():
             category=category,
             latitude=latitude,
             longitude=longitude,
-            search_manager_id=current_user.id,
+            coordination_officer_id=current_user.id,
             status=status,
             title=title,
             description=request.form.get('description'),
             description_hidden=request.form.get('description_hidden'),
-            # gpx_data=gpx_data_list,
-            # gpx_color_list=gpx_color_list,
+            search_officer_id=request.form.get('search_manager_id')
         )
         db.session.add(new_sar_call)
         db.session.commit()
         flash('SAR call created successfully!', 'success')
-        return redirect(url_for('dashboard'))
+        return redirect(url_for('list_sar'))
 
-    return render_template('create_sar.html', categories=categories, statuses=statuses)
+    return render_template('create_sar.html', categories=categories, statuses=statuses, managers=managers)
 
 
 @app.route('/list_sar')
 @login_required
 def list_sar():
-    sar_calls = SARCall.query.join(User, SARCall.search_manager_id == User.id).join(SARCategory,
+    sar_calls = SARCall.query.join(User, SARCall.search_officer_id == User.id).join(SARCategory,
                                                                                     SARCall.category == SARCategory.id).add_columns(
         SARCategory, User, SARCall).all()
     return render_template('list_sar.html', sar_calls=sar_calls)
@@ -62,6 +64,7 @@ def edit_sar(id):
     sar_call = SARCall.query.get_or_404(id)
     categories = SARCategory.query.all()
     statuses = SARStatus.query.order_by('id').all()
+    managers =  User.query.join(Role).filter(or_(Role.name == 'search manager', Role.name =='admin')).all()
 
     if request.method == 'POST':
         sar_call.start_date = parser.parse(request.form.get('start_date'))
@@ -75,7 +78,6 @@ def edit_sar(id):
         sar_call.title = request.form.get('title')
         sar_call.description = request.form.get('description')
         sar_call.description_hidden = request.form.get('description_hidden')
-        # sar_call.gpx_data = request.form.get('gpx_data')
 
         db.session.commit()
         flash('SAR call updated successfully!', 'success')
@@ -86,7 +88,8 @@ def edit_sar(id):
     if sar_call.finish_date:
         sar_call.finish_date = sar_call.finish_date.strftime('%Y-%m-%d')
 
-    return render_template('edit_sar.html', sar_call=sar_call, categories=categories, statuses=statuses)
+    return render_template('edit_sar.html', sar_call=sar_call, categories=categories, statuses=statuses,
+                           managers=managers)
 
 
 @app.route('/sar_details/<int:id>')
@@ -100,10 +103,10 @@ def sar_details(id):
         gpx_tracks = GPSTrack.query.filter_by(comment_id=comment.id).all()
         for track in gpx_tracks:
             comments_with_gpx.append({
-            "id": track.id,
-            "comment_id": comment.id,
-            "name": track.file_name,
-            "comment": track.gpx_name
+                "id": track.id,
+                "comment_id": comment.id,
+                "name": track.file_name,
+                "comment": track.gpx_name
             })
 
     return render_template('sar_details.html', sar=sar, gpx_ids=gpx_files, comments_with_gpx=comments_with_gpx)
@@ -123,9 +126,7 @@ def delete_sar(id):
 @login_required
 def add_comment(sar_call_id):
     text = request.form.get('text')
-    gpx_file = request.files.get('gpx_file')
-    gpx_data = gpx_file.read().decode("utf-8") if gpx_file else None
-    comment = Comment(text=text, gpx_data=gpx_data, user_id=current_user.id, sar_call_id=sar_call_id)
+    comment = Comment(text=text, user_id=current_user.id, sar_call_id=sar_call_id)
     db.session.add(comment)
     db.session.commit()
     return redirect(url_for('sar_details', id=sar_call_id))

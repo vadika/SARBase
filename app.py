@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_login import LoginManager
 from flask_babel import Babel
+#from flask_debugtoolbar import DebugToolbarExtension
 from sqlalchemy import MetaData
 
 
@@ -27,6 +28,8 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+mysqlconnector://sarbaseuser:password@localhost/sarbaseapp')
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+#app.debug = True
+#toolbar = DebugToolbarExtension(app)
 babel= Babel(app)
 babel.init_app(app, locale_selector=get_locale)
 db = SQLAlchemy(app, metadata=metadata)

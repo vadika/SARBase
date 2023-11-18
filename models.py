@@ -5,30 +5,6 @@ from flask_login import UserMixin
 from app import db
 
 
-class User(UserMixin, db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    created = db.Column(db.DateTime, nullable=False, default=datetime.now)
-    updated = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
-    username = db.Column(db.String(150), unique=True, nullable=False)
-    full_name = db.Column(db.String(301), nullable=False)
-    email = db.Column(db.String(150), unique=True, nullable=False)
-    phone_number = db.Column(db.String(50), nullable=True)
-    password = db.Column(db.String(50))
-    role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
-    role = db.relationship('Role', backref=db.backref('users', lazy='dynamic'))
-
-    def __repr__(self):
-        return self.username
-
-
-class Role(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(80), unique=True)
-
-    def __repr__(self):
-        return self.name  # This is so that when we print the Role class, it will print the name instead of the object memory address
-
-
 class SARCall(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False, default=datetime.now)
@@ -45,8 +21,42 @@ class SARCall(db.Model):
     title = db.Column(db.String(150), nullable=False)
     description = db.Column(db.Text, nullable=True)
     description_hidden = db.Column(db.Text, nullable=True)
-    search_manager_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    search_manager = db.relationship('User', backref=db.backref('sar_calls', lazy=True))
+    search_officer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    coordination_officer_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    search_officer = db.relationship('User', back_populates='search_sar_calls', foreign_keys=[search_officer_id])
+    coordination_officer = db.relationship('User', back_populates='coordination_sar_calls',
+                                           foreign_keys=[coordination_officer_id])
+
+    def __repr__(self):
+        return self.title
+
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    created = db.Column(db.DateTime, nullable=False, default=datetime.now)
+    updated = db.Column(db.DateTime, nullable=False, default=datetime.now, onupdate=datetime.now)
+    username = db.Column(db.String(150), unique=True, nullable=False)
+    full_name = db.Column(db.String(301), nullable=False)
+    email = db.Column(db.String(150), unique=True, nullable=False)
+    phone_number = db.Column(db.String(50), nullable=True)
+    password = db.Column(db.String(50))
+    role_id = db.Column(db.Integer, db.ForeignKey('role.id'))
+    role = db.relationship('Role', back_populates='users')
+    search_sar_calls = db.relationship('SARCall', back_populates='search_officer',
+                                       foreign_keys=[SARCall.search_officer_id])
+    coordination_sar_calls = db.relationship('SARCall', back_populates='coordination_officer',
+                                             foreign_keys=[SARCall.coordination_officer_id])
+
+    def __repr__(self):
+        return self.username
+
+
+class Role(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(80), unique=True)
+    users = db.relationship('User', back_populates='role')
+
+    def __repr__(self):
+        return self.name  # Assuming 'name' is the field you want to display
 
 
 class SARCategory(db.Model):

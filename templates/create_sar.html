@@ -70,24 +70,50 @@
                 <textarea name="description_hidden" class="form-control"></textarea>
             </div>
 
-            {#            <!-- GPX Track Fields (You can expand upon this based on the previous discussions about multiple tracks) -->#}
-            {#            <div class="form-group">#}
-            {#                <label for="gpx_file">Upload GPX Track:</label>#}
-            {#                <input type="file" name="gpx_file">#}
-            {#            </div>#}
+            <div class="form-group">
+                <label for="manager">Assigned search manager:</label>
+                <select name="category" id="search_officer" class="form-control">
+                    {% for user in managers %}
+                        <option value="{{ user.id }}">{{ user.full_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
 
             <button type="submit" class="btn btn-primary">Create</button>
         </form>
     </div>
     <div id="map" style="width: 600px; height: 400px;"></div>
     <script>
-        var map = L.map('map').setView([51.505, -0.09], 13); // Default to London, adjust as needed
+
+        var map = L.map('map').setView([60.19, 20.37], 13); // Default to London, adjust as needed#
+        var marker;
 
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         }).addTo(map);
 
-        var marker;
+
+        // Function to initialize map with user's location
+        function initializeMap(lat, lon) {
+            map = L.map('map').setView([lat, lon], 13);
+
+
+        }
+
+        // Fetch user's current location
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(function (position) {
+                initializeMap(position.coords.latitude, position.coords.longitude);
+            }, function () {
+                // If there's an error or permission denied, default to a location (e.g., London in this case)
+                initializeMap(60.19, 20.37);
+            });
+        } else {
+            // Geolocation is not supported by this browser, default to a location (e.g., London)
+            initializeMap(60.19, 20.37);
+        }
+
 
         // Add the geocoder
         L.Control.geocoder({
@@ -116,44 +142,15 @@
             document.querySelector('input[name="longitude"]').value = e.latlng.lng;
         });
 
-        {#var gpxTracks = {{ gpx_data | tojson }};#}
-        {#gpxTracks.forEach(function (track) {#}
-        {#    var gpxLayer = new L.GPX(track.data, {async: true, polyline_options: {color: track.color}});#}
-        {#    gpxLayer.on('loaded', function (e) {#}
-        {#        map.fitBounds(e.target.getBounds());#}
-        {#    });#}
-        {#    map.addLayer(gpxLayer);#}
-        {#})
 
-            #}
-
-            // If editing, set the marker to the existing coordinates
-            var latInput = document.querySelector('input[name="latitude"]');
-            var lngInput = document.querySelector('input[name="longitude"]');
-            if (latInput.value && lngInput.value) {
-                marker = L.marker([latInput.value, lngInput.value]).addTo(map);
-            }
+        // If editing, set the marker to the existing coordinates
+        var latInput = document.querySelector('input[name="latitude"]');
+        var lngInput = document.querySelector('input[name="longitude"]');
+        if (latInput.value && lngInput.value) {
+            marker = L.marker([latInput.value, lngInput.value]).addTo(map);
+        }
     </script>
-    {##}
-    {#    <script>#}
-    {#        function addTrack() {#}
-    {#            let trackDiv = document.createElement('div');#}
-    {#            trackDiv.className = 'gpx_track';#}
-    {#            trackDiv.innerHTML = `#}
-    {#            <label>GPX Data:</label>#}
-    {#            <textarea name="gpx_data[]"></textarea>#}
-    {#            <label>Color:</label>#}
-    {#            <input type="color" name="gpx_color[]" value="#ff0000">#}
-    {#            <button type="button" onclick="removeTrack(this)">Remove</button>#}
-    {#        `;#}
-    {#            document.getElementById('gpx_tracks').appendChild(trackDiv);#}
-    {#        }#}
-    {##}
-    {#        function removeTrack(button) {#}
-    {#            let trackDiv = button.parentElement;#}
-    {#            trackDiv.remove();#}
-    {#        }#}
-    {#    </script>#}
+
 
     <script>
         document.getElementById('today_button').addEventListener('click', function () {
