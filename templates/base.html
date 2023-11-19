@@ -21,9 +21,11 @@
             <li class="nav-item">
                 <a class="nav-link" href="/list_sar">{{ _('SAR records') }}</a>
             </li>
+            {% if current_user.is_authenticated %}
             <li class="nav-item">
                 <a class="nav-link" href="/create_sar">{{ _('New record') }}</a>
             </li>
+            {% endif %}
         </ul>
 
         <!-- Display user info and logout link if user is authenticated -->

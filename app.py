@@ -47,7 +47,7 @@ import dashboard
 
 @app.route('/')
 def hello_world():  # put application's code here
-    return  redirect(url_for('dashboard'))
+    return  redirect(url_for('list_sar'))
 
 
 @app.route('/set_language/<lang_code>')

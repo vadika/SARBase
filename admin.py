@@ -23,10 +23,10 @@ class UserModelView(AdminModelView):
 
 admin = Admin(app, name='SAR Admin', template_mode='bootstrap3')
 admin.add_view(UserModelView(User, db.session))
-admin.add_view(AdminModelView(Role, db.session))
 admin.add_view(AdminModelView(SARCall, db.session))
 admin.add_view(AdminModelView(Comment, db.session))
 admin.add_view(AdminModelView(GPSTrack, db.session))
+admin.add_view(AdminModelView(Role, db.session, category="Dictionaries"))
 admin.add_view(AdminModelView(SARCategory, db.session, category="Dictionaries"))
 admin.add_view(AdminModelView(SARStatus, db.session, category="Dictionaries"))
 admin.add_view(AdminModelView(SARResult, db.session, category="Dictionaries"))

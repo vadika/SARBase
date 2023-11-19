@@ -1,10 +1,11 @@
 from dateutil import parser
 from flask import request, redirect, flash, render_template, url_for, jsonify, Response
 from flask_login import login_required, current_user
-from sqlalchemy import or_
+from sqlalchemy import or_, and_
+from sqlalchemy.orm import aliased
 
 from app import app, db
-from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User, Role
+from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User, Role, SARResult
 
 
 @app.route('/create_sar', methods=['GET', 'POST'])
@@ -12,8 +13,7 @@ from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User, Rol
 def create_sar():
     categories = SARCategory.query.all()
     statuses = SARStatus.query.order_by('id').all()
-    managers = User.query.join(Role).filter(or_(Role.name == 'search manager', Role.name =='admin')).all()
-
+    managers = User.query.join(Role).filter(or_(Role.name == 'search manager', Role.name == 'admin')).all()
 
     if request.method == 'POST':
         start_date = parser.parse(request.form.get('start_date'))
@@ -50,12 +50,20 @@ def create_sar():
 
 
 @app.route('/list_sar')
-@login_required
 def list_sar():
-    sar_calls = SARCall.query.join(User, SARCall.search_officer_id == User.id).join(SARCategory,
-                                                                                    SARCall.category == SARCategory.id).add_columns(
-        SARCategory, User, SARCall).all()
-    return render_template('list_sar.html', sar_calls=sar_calls)
+    is_logged_in = current_user.is_authenticated
+    search_officer = aliased(User)
+    coordination_officer = aliased(User)
+
+    sar_calls = (SARCall.query
+                 .outerjoin(search_officer, and_ (SARCall.search_officer_id == search_officer.id, SARCall.search_officer_id != None))
+                 .join(coordination_officer, SARCall.coordination_officer_id == coordination_officer.id)
+                 .join(SARCategory, SARCall.category == SARCategory.id)
+                 .join(SARStatus, SARCall.status == SARStatus.id)
+                 .add_columns(SARCategory, SARCall, SARStatus)
+                 .all())
+
+    return render_template('list_sar.html', sar_calls=sar_calls, is_logged_in=is_logged_in)
 
 
 @app.route('/edit_sar/<int:id>', methods=['GET', 'POST'])
@@ -64,7 +72,7 @@ def edit_sar(id):
     sar_call = SARCall.query.get_or_404(id)
     categories = SARCategory.query.all()
     statuses = SARStatus.query.order_by('id').all()
-    managers =  User.query.join(Role).filter(or_(Role.name == 'search manager', Role.name =='admin')).all()
+    managers = User.query.join(Role).filter(or_(Role.name == 'search manager', Role.name == 'admin')).all()
 
     if request.method == 'POST':
         sar_call.start_date = parser.parse(request.form.get('start_date'))
@@ -94,12 +102,27 @@ def edit_sar(id):
 
 @app.route('/sar_details/<int:id>')
 def sar_details(id):
-    sar = SARCall.query.get_or_404(id)  # Fetch the SARCall record or return 404
+    is_logged_in = current_user.is_authenticated
+    search_officer = aliased(User)
+    coordination_officer = aliased(User)
+
+    sar = (SARCall.query
+                 .outerjoin(search_officer,
+                            and_(SARCall.search_officer_id == search_officer.id, SARCall.search_officer_id != None))
+                 .join(coordination_officer, SARCall.coordination_officer_id == coordination_officer.id)
+                 .join(SARCategory, SARCall.category == SARCategory.id)
+                 .join(SARStatus, SARCall.status == SARStatus.id)
+                 .outerjoin(SARResult, and_(SARCall.result == SARResult.id, SARCall.result != None))
+                 .add_columns(SARCall, SARCategory, SARStatus, SARResult)
+                 .filter(SARCall.id == id).first())
+
+    comments = Comment.query.filter_by(sar_call_id=id).all()
+
     gpx_files = [id[0] for id in GPSTrack.query.with_entities(GPSTrack.id).filter_by(
         sar_call_id=id).all()]  # Fetch all GPX files for this SARCall
     comments_with_gpx = []
 
-    for comment in sar.comments:
+    for comment in comments:
         gpx_tracks = GPSTrack.query.filter_by(comment_id=comment.id).all()
         for track in gpx_tracks:
             comments_with_gpx.append({
@@ -109,7 +132,9 @@ def sar_details(id):
                 "comment": track.gpx_name
             })
 
-    return render_template('sar_details.html', sar=sar, gpx_ids=gpx_files, comments_with_gpx=comments_with_gpx)
+    print(sar)
+
+    return render_template('sar_details.html', sar=sar, gpx_ids=gpx_files, comments_with_gpx=comments_with_gpx,is_logged_in=is_logged_in)
 
 
 @app.route('/delete_sar/<int:id>')
@@ -180,7 +205,6 @@ def upload_gpx():
 
 
 @app.route('/get_gpx/<int:gpx_id>')
-@login_required
 def get_gpx(gpx_id):
     gpx_file = GPSTrack.query.get_or_404(gpx_id)
     return Response(gpx_file.gpx_data, mimetype='application/gpx+xml')

@@ -30,6 +30,7 @@ class SARCall(db.Model):
     def __repr__(self):
         return self.title
 
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     created = db.Column(db.DateTime, nullable=False, default=datetime.now)
