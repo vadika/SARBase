@@ -49,38 +49,74 @@
             </div>
 
             <div class="form-group">
-                <label for="coordinates">Geographical Coordinates:</label>
+                <label for="result">Job result:</label>
+                <select name="result" id="result" class="form-control">
+                    {% for result in results %}
+                        <option value="{{ result.id }}" {% if result.id == sar_call.result %}selected{% endif %}>
+                            {{ result.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label for="coordinates">IPP Coordinates:</label>
                 <input type="text" name="longitude" class="form-control" value="{{ sar_call.longitude }}" required>
                 <input type="text" name="latitude" class="form-control" value="{{ sar_call.latitude }}" required>
             </div>
 
             <div class="form-group">
-                <label for="title">Title:</label>
-                <input type="text" name="title" class="form-control" value="{{ sar_call.title }}" required>
-            </div>
+                <label for="coordinates">Victim found coordinates:</label>
+                <input type="text" name="longitude_found" class="form-control" value="{{ sar_call.longitude_found }}">
+                <input type="text" name="latitude_found" class="form-control" value="{{ sar_call.latitude_found }}">
+
+                <div class="form-group">
+                    <label for="title">Title:</label>
+                    <input type="text" name="title" class="form-control" value="{{ sar_call.title }}" required>
+                </div>
 
 
-            <div class="form-group">
-                <label for="description">Description:</label>
-                <textarea name="description" class="form-control">{{ sar_call.description }}</textarea>
-            </div>
+                <div class="form-group">
+                    <label for="description">Description:</label>
+                    <textarea name="description" class="form-control">{{ sar_call.description }}</textarea>
+                </div>
 
-            <div class="form-group">
-                <label for="description_hidden">Hidden Description:</label>
-                <textarea name="description_hidden" class="form-control">{{ sar_call.description_hidden }}</textarea>
-            </div>
+                <div class="form-group">
+                    <label for="description_hidden">Hidden Description:</label>
+                    <textarea name="description_hidden"
+                              class="form-control">{{ sar_call.description_hidden }}</textarea>
+                </div>
 
-            {#            <!-- GPX Track Fields (You can expand upon this based on the previous discussion about multiple tracks) -->#}
-            {#            <div class="form-group">#}
-            {#                <label for="gpx_file">Upload GPX Track:</label>#}
-            {#                <input type="file" name="gpx_file">#}
-            {#            </div>#}
+                <div class="form-group">
+                    <label for="coordination_officer">Created by:</label>
+                    <select name="coordination_officer" id="coordination_officer" class="form-control">
+                        {% for coordination_officer in coordination_officers %}
+                            <option value="{{ coordination_officer.id }}"
+                                    {% if coordination_officer.id == sar_call.coordination_officer_id %}selected{% endif %}>
+                                {{ coordination_officer.full_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <button type="submit" class="btn btn-primary">Update</button>
+                <div class="form-group">
+                    <label for="search_officer">Search officer:</label>
+                    <select name="search_officer" id="search_officer" class="form-control">
+                        {% for search_officer in search_officers %}
+                            <option value="{{ search_officer.id }}"
+                                    {% if search_officer.id == sar_call.search_officer_id %}selected{% endif %}>
+                                {{ search_officer.full_name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+
+                <button type="submit" class="btn btn-primary">Update</button>
         </form>
         <div id="map" style="width: 600px; height: 400px;"></div>
         <script>
-            var map = L.map('map').setView([60.19,20.37], 13); // Default to London, adjust as needed
+            var map = L.map('map').setView([60.19, 20.37], 13); // Default to London, adjust as needed
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'

@@ -53,7 +53,7 @@ def hello_world():  # put application's code here
 @app.route('/set_language/<lang_code>')
 def set_language(lang_code):
     session['language'] = lang_code
-    return redirect(request.referrer or url_for('dashboard'))
+    return redirect(request.referrer or url_for('list_sar'))
 
 
 

@@ -13,7 +13,7 @@ from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User, Rol
 def create_sar():
     categories = SARCategory.query.all()
     statuses = SARStatus.query.order_by('id').all()
-    managers = User.query.join(Role).filter(or_(Role.name == 'search manager', Role.name == 'admin')).all()
+    managers = User.query.join(Role).filter(or_(Role.name == 'search officer', Role.name == 'admin')).all()
 
     if request.method == 'POST':
         start_date = parser.parse(request.form.get('start_date'))
@@ -22,12 +22,6 @@ def create_sar():
         longitude = request.form.get('longitude')
         status = request.form.get('status')
         title = request.form.get('title')
-        # gpx_data_list = request.form.getlist('gpx_data[]')
-        # gpx_color_list = request.form.getlist('gpx_color[]')
-
-        # for data, color in zip(gpx_data_list, gpx_color_list):
-        #     track = GPSTrack(data=data, color=color, sar_call=new_sar_call)
-        #     db.session.add(track)
 
         new_sar_call = SARCall(
             start_date=start_date,
@@ -56,7 +50,8 @@ def list_sar():
     coordination_officer = aliased(User)
 
     sar_calls = (SARCall.query
-                 .outerjoin(search_officer, and_ (SARCall.search_officer_id == search_officer.id, SARCall.search_officer_id != None))
+                 .outerjoin(search_officer,
+                            and_(SARCall.search_officer_id == search_officer.id, SARCall.search_officer_id != None))
                  .join(coordination_officer, SARCall.coordination_officer_id == coordination_officer.id)
                  .join(SARCategory, SARCall.category == SARCategory.id)
                  .join(SARStatus, SARCall.status == SARStatus.id)
@@ -72,7 +67,10 @@ def edit_sar(id):
     sar_call = SARCall.query.get_or_404(id)
     categories = SARCategory.query.all()
     statuses = SARStatus.query.order_by('id').all()
-    managers = User.query.join(Role).filter(or_(Role.name == 'search manager', Role.name == 'admin')).all()
+    results = SARResult.query.all()
+    search_officers = User.query.join(Role).filter(or_(Role.name == 'search officer', Role.name == 'admin')).all()
+    coordination_officers = User.query.join(Role).filter(
+        or_(Role.name == 'coordination officer', Role.name == 'admin')).all()
 
     if request.method == 'POST':
         sar_call.start_date = parser.parse(request.form.get('start_date'))
@@ -83,9 +81,16 @@ def edit_sar(id):
         sar_call.longitude = request.form.get('longitude')
         sar_call.status = request.form.get('status')
         sar_call.result = request.form.get('result')
+        if (request.form.get('latitude_found') and request.form.get('longitude_found')
+                and request.form.get('latitude_found') != 'None' and request.form.get('longitude_found') != 'None'):
+            sar_call.latitude_found = request.form.get('latitude_found')
+            sar_call.longitude_found = request.form.get('longitude_found')
         sar_call.title = request.form.get('title')
         sar_call.description = request.form.get('description')
         sar_call.description_hidden = request.form.get('description_hidden')
+        sar_call.search_officer_id = request.form.get('search_officer')
+        sar_call.coordination_officer_id = request.form.get('coordination_officer')
+
 
         db.session.commit()
         flash('SAR call updated successfully!', 'success')
@@ -97,7 +102,8 @@ def edit_sar(id):
         sar_call.finish_date = sar_call.finish_date.strftime('%Y-%m-%d')
 
     return render_template('edit_sar.html', sar_call=sar_call, categories=categories, statuses=statuses,
-                           managers=managers)
+                           coordination_officers=coordination_officers, results=results,
+                           search_officers=search_officers)
 
 
 @app.route('/sar_details/<int:id>')
@@ -107,14 +113,14 @@ def sar_details(id):
     coordination_officer = aliased(User)
 
     sar = (SARCall.query
-                 .outerjoin(search_officer,
-                            and_(SARCall.search_officer_id == search_officer.id, SARCall.search_officer_id != None))
-                 .join(coordination_officer, SARCall.coordination_officer_id == coordination_officer.id)
-                 .join(SARCategory, SARCall.category == SARCategory.id)
-                 .join(SARStatus, SARCall.status == SARStatus.id)
-                 .outerjoin(SARResult, and_(SARCall.result == SARResult.id, SARCall.result != None))
-                 .add_columns(SARCall, SARCategory, SARStatus, SARResult)
-                 .filter(SARCall.id == id).first())
+           .outerjoin(search_officer,
+                      and_(SARCall.search_officer_id == search_officer.id, SARCall.search_officer_id != None))
+           .join(coordination_officer, SARCall.coordination_officer_id == coordination_officer.id)
+           .join(SARCategory, SARCall.category == SARCategory.id)
+           .join(SARStatus, SARCall.status == SARStatus.id)
+           .outerjoin(SARResult, and_(SARCall.result == SARResult.id, SARCall.result != None))
+           .add_columns(SARCall, SARCategory, SARStatus, SARResult)
+           .filter(SARCall.id == id).first())
 
     comments = Comment.query.filter_by(sar_call_id=id).all()
 
@@ -132,9 +138,8 @@ def sar_details(id):
                 "comment": track.gpx_name
             })
 
-    print(sar)
-
-    return render_template('sar_details.html', sar=sar, gpx_ids=gpx_files, comments_with_gpx=comments_with_gpx,is_logged_in=is_logged_in)
+    return render_template('sar_details.html', sar=sar, gpx_ids=gpx_files, comments_with_gpx=comments_with_gpx,
+                           is_logged_in=is_logged_in)
 
 
 @app.route('/delete_sar/<int:id>')
@@ -207,4 +212,5 @@ def upload_gpx():
 @app.route('/get_gpx/<int:gpx_id>')
 def get_gpx(gpx_id):
     gpx_file = GPSTrack.query.get_or_404(gpx_id)
-    return Response(gpx_file.gpx_data, mimetype='application/gpx+xml')
+    return Response(gpx_file.gpx_data, mimetype='application/gpx+xml',
+                    headers={'Content-Disposition': 'attachment;filename=' + gpx_file.file_name + '.gpx'})
