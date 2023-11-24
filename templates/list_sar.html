@@ -7,6 +7,35 @@
 {% block content %}
     <div class="container mt-5">
         <h2>SAR Records</h2>
+
+        <form method="get" action="{{ url_for('list_sar') }}" id="filter-form">
+        <!-- Filter by Status -->
+            <select id="status-select" name="status" onchange="submitForm()">
+                <option value="">All Statuses</option>
+                <!-- Populate options with statuses -->
+                {% for status in statuses %}
+                    <option value="{{ status.id }}">{{ status.name }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Filter by Category -->
+            <select id="category-select" name="category" onchange="submitForm()">
+                <option value="">All Categories</option>
+                <!-- Populate options with categories -->
+                {% for category in categories %}
+                    <option value="{{ category.id }}">{{ category.name }}</option>
+                {% endfor %}
+            </select>
+
+            <!-- Sorting Options -->
+            <select id="sort-select" name="sort" onchange="submitForm()">
+                <option value="date_asc">Date (Oldest First)</option>
+                <option value="date_desc">Date (Newest First)</option>
+                <!-- other sorting options -->
+            </select>
+        </form>
+
+
         <table class="table table-bordered table-hover">
             <thead>
             <tr>
@@ -19,8 +48,8 @@
                 <th>Created by</th>
                 <th>Manager</th>
 
-                {%  if is_logged_in %}
-                <th>Actions</th>
+                {% if is_logged_in %}
+                    <th>Actions</th>
                 {% endif %}
             </tr>
             </thead>
@@ -36,20 +65,20 @@
                     <td>{{ sar.SARCall.coordination_officer.full_name }}</td>
                     <td>{{ sar.SARCall.search_officer.full_name }}</td>
                     {% if is_logged_in %}
-                    <td>
-                        <a href="{{ url_for('edit_sar', id=sar.SARCall.id) }}">
-                            <button type="button" class="btn btn-info">Edit</button>
-                        </a>
-{#                        <a href="{{ url_for('delete_sar', id=sar.SARCall.id) }}">#}
-{#                            <button type="button" class="btn btn-danger">Delete</button>#}
-{#                        </a>#}
-                    </td>
+                        <td>
+                            <a href="{{ url_for('edit_sar', id=sar.SARCall.id) }}">
+                                <button type="button" class="btn btn-info">Edit</button>
+                            </a>
+                            {#                        <a href="{{ url_for('delete_sar', id=sar.SARCall.id) }}">#}
+                            {#                            <button type="button" class="btn btn-danger">Delete</button>#}
+                            {#                        </a>#}
+                        </td>
                     {% endif %}
                 </tr>
             {% endfor %}
             </tbody>
         </table>
-{#        <a href="/dashboard">Back to Dashboard</a>#}
+        {#        <a href="/dashboard">Back to Dashboard</a>#}
     </div>
 
     <script>
@@ -59,6 +88,14 @@
             });
         });
     </script>
+
+    <script>
+        function submitForm() {
+            document.getElementById("filter-form").submit();
+        }
+    </script>
+
+
 
 
 

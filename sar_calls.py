@@ -48,8 +48,33 @@ def list_sar():
     is_logged_in = current_user.is_authenticated
     search_officer = aliased(User)
     coordination_officer = aliased(User)
+    categories = SARCategory.query.all()
+    statuses = SARStatus.query.all()
 
-    sar_calls = (SARCall.query
+    category_id = request.args.get('category')
+    sort_order = request.args.get('sort')
+    status_id = request.args.get('status')
+    query = SARCall.query
+
+    # Filter by status
+    if status_id:
+        query = query.filter_by(status=status_id)
+
+    # Filter by category
+    if category_id:
+        query = query.filter_by(category=category_id)
+
+    # Sorting
+    if sort_order == 'date_asc':
+        query = query.order_by(SARCall.start_date.asc())
+    elif sort_order == 'date_desc':
+        query = query.order_by(SARCall.start_date.desc())
+    # add other sorting options if needed
+    else:
+        query = query.order_by(SARCall.id.desc())
+
+
+    sar_calls = (query
                  .outerjoin(search_officer,
                             and_(SARCall.search_officer_id == search_officer.id, SARCall.search_officer_id != None))
                  .join(coordination_officer, SARCall.coordination_officer_id == coordination_officer.id)
@@ -58,7 +83,8 @@ def list_sar():
                  .add_columns(SARCategory, SARCall, SARStatus)
                  .all())
 
-    return render_template('list_sar.html', sar_calls=sar_calls, is_logged_in=is_logged_in)
+    return render_template('list_sar.html', sar_calls=sar_calls, is_logged_in=is_logged_in, categories=categories, statuses=statuses)
+
 
 
 @app.route('/edit_sar/<int:id>', methods=['GET', 'POST'])
