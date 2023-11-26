@@ -1,14 +1,30 @@
 version: '3.8'
 services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
+
+  flask-app:
+    build:
+      context: .
+      dockerfile: Dockerfile-app
     depends_on:
       - db
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=mysql+mysqlconnector://sarbaseuser:password@db/sarbaseapp
+    volumes:
+      - ./certs:/certs
+
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./certs:/certs
+    depends_on:
+      - flask-app
+
 
   db:
     image: mysql:8.0
