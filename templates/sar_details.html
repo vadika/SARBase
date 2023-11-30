@@ -211,11 +211,11 @@
     </div>
 
 
-    <!-- Button to trigger the modal -->
-    <button id="save-track-button" type="button" class="btn btn-primary" data-toggle="modal"
-            data-target="#saveTrackModal">
-        Save Track
-    </button>
+    {#    <!-- Button to trigger the modal -->#}
+    {#    <button id="save-track-button" type="button" class="btn btn-primary" data-toggle="modal"#}
+    {#            data-target="#saveTrackModal">#}
+    {#        Save Track#}
+    {#    </button>#}
 
     <!-- The Modal -->
     <div class="modal fade" id="saveTrackModal" tabindex="-1" role="dialog" aria-labelledby="saveTrackModalLabel"
@@ -265,7 +265,10 @@
                         marker_options: {
                             startIconUrl: '/static/pin-icon-start.png',
                             endIconUrl: '/static/pin-icon-end.png',
-                            shadowUrl: '/static/pin-shadow.png'
+                            shadowUrl: '/static/pin-shadow.png',
+                            wptIconUrls: {
+                                '': '/static/pin-icon-wpt.png'
+                            }
                         }
                     }).on('loaded', function (e) {
                         map.fitBounds(e.target.getBounds());
@@ -321,6 +324,32 @@
             // You can use AJAX or any method you prefer for this part
         });
 
+        // Create a custom control for the "Save Track" button
+        var saveTrackControl = L.Control.extend({
+            options: {
+                position: 'bottomleft', // You can adjust the position as needed
+            },
+
+            onAdd: function (map) {
+                // Create a container div for the button
+                var container = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+
+                // Create the "Save Track" button and add it to the container
+                var button = L.DomUtil.create('a', 'leaflet-control-button', container);
+                button.innerHTML = '&#128190;'  //floppy disk icon :)
+
+                // Add a click event handler to the button
+                L.DomEvent.on(button, 'click', function () {
+                    // Open your modal dialog for saving the track here
+                    $('#saveTrackModal').modal('show');
+                });
+
+                return container;
+            },
+        });
+
+        // Add the custom control to your map
+        new saveTrackControl().addTo(map);
 
     </script>
 

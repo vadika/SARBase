@@ -261,7 +261,6 @@ def save_track():
 
     db.session.add(new_comment)
     db.session.commit()
-    print ("new comment id={}", new_comment.id)
 
     # Create a new GPXTrack instance and save it to the database
     new_track = GPSTrack(comment_id=new_comment.id, sar_call_id=sar_id, file_name=track_name, gpx_data=track_data)
