@@ -240,3 +240,32 @@ def get_gpx(gpx_id):
     gpx_file = GPSTrack.query.get_or_404(gpx_id)
     return Response(gpx_file.gpx_data, mimetype='application/gpx+xml',
                     headers={'Content-Disposition': 'attachment;filename=' + gpx_file.file_name + '.gpx'})
+
+
+
+@app.route('/save_track', methods=['POST'])
+@login_required
+def save_track():
+    # Get the track data from the POST request
+    track_data = request.form.get('track_data')  # Replace with the actual field name for the track data
+
+    # Get the track name and comment from the POST request
+    track_name = request.form.get('track_name')
+    track_comment = request.form.get('track_comment')
+    sar_id = request.form.get('sar_call_id')
+
+
+    # Create a new Comment instance associated with the track and save it to the database
+    new_comment = Comment(sar_call_id=sar_id, user_id=current_user.id, text=track_comment)
+    #  comment = Comment(text=text, user_id=current_user.id, sar_call_id=sar_call_id)
+
+    db.session.add(new_comment)
+    db.session.commit()
+    print ("new comment id={}", new_comment.id)
+
+    # Create a new GPXTrack instance and save it to the database
+    new_track = GPSTrack(comment_id=new_comment.id, sar_call_id=sar_id, file_name=track_name, gpx_data=track_data)
+    db.session.add(new_track)
+    db.session.commit()
+
+    return jsonify(success=True, message="Track saved successfully")

@@ -7,11 +7,17 @@
 {% block content %}
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
+    <!-- Leaflet.draw CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-
+    <!-- Leaflet.draw JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <!-- Include leaflet-gpx plugin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
+
+    <script src="/static/togpx.js"></script>
 
     <style>
         #map {
@@ -205,6 +211,48 @@
     </div>
 
 
+    <!-- Button to trigger the modal -->
+    <button id="save-track-button" type="button" class="btn btn-primary" data-toggle="modal"
+            data-target="#saveTrackModal">
+        Save Track
+    </button>
+
+    <!-- The Modal -->
+    <div class="modal fade" id="saveTrackModal" tabindex="-1" role="dialog" aria-labelledby="saveTrackModalLabel"
+         aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="saveTrackModalLabel">Save Track</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <form id="uploadTRKForm" method="post" enctype="multipart/form-data">
+                    <div class="modal-body">
+                        <!-- Form inputs for track name and comment -->
+                        <div class="form-group">
+                            <label for="track-name">Track Name:</label>
+                            <input type="text" class="form-control" id="track-name">
+                        </div>
+                        <div class="form-group">
+                            <label for="track-comment">Comment:</label>
+                            <textarea class="form-control" id="track-comment"></textarea>
+                        </div>
+                    </div>
+                    <input type="hidden" id="sarIdForTRK" name="sarId" value="{{ sar.SARCall.id }}">
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-primary" id="confirm-save-track">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+
     <script>
 
         // Load GPX file and add to map
@@ -235,9 +283,44 @@
         }).addTo(map);
         L.marker([{{ sar.SARCall.latitude }}, {{ sar.SARCall.longitude }}]).addTo(map);
 
+
         gpxData.forEach(function (id) {
             loadAndDisplayGPX(id);
         });
+
+        // Initialize drawing capabilities
+        var drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        var drawControl = new L.Control.Draw({
+            edit: {
+                featureGroup: drawnItems,
+            },
+            draw: {
+                polygon: true,
+                polyline: true,
+                rectangle: false,
+                circle: true,
+                marker: true,
+            },
+        });
+        map.addControl(drawControl);
+
+
+        map.on('draw:created', function (e) {
+            var layer = e.layer;
+
+            // Add the drawn layer to the map and drawnItems feature group
+            map.addLayer(layer);
+            drawnItems.addLayer(layer);
+
+            // Get the GeoJSON representation of the drawn shape
+            var geoJSON = layer.toGeoJSON();
+
+            // Send the GeoJSON data to your server to save as a comment
+            // You can use AJAX or any method you prefer for this part
+        });
+
 
     </script>
 
@@ -314,7 +397,62 @@
         });
     </script>
 
+    <script>
+        function getTrackData() {
+            // Assuming you are using a Leaflet.Draw FeatureGroup for drawn items
+            var drItems = drawnItems.toGeoJSON();
 
+            // Check if there are any features (tracks) drawn
+            if (drItems.features.length === 0) {
+                return null;  // No tracks drawn
+            }
+
+            // Convert GeoJSON to GPX format (you can use a library like togeojson or turf.js)
+            var gpxData = geoJSONToGPX(drItems);
+
+            return gpxData;
+        }
+
+        // Function to convert GeoJSON to GPX
+        function geoJSONToGPX(geoJSONData) {
+            var gpx = togpx(geoJSONData);
+            return gpx;
+        }
+
+
+        // JavaScript to handle the confirmation and capture data
+        document.getElementById('confirm-save-track').addEventListener('click', function () {
+            var trackName = document.getElementById('track-name').value;
+            var trackComment = document.getElementById('track-comment').value;
+            var sarID = document.getElementById('sarIdForGPX').value;
+
+            // Get the track data (replace 'getTrackData()' with your method to obtain the track data)
+            var trackData = getTrackData();
+
+            // Send trackName, trackComment, and trackData to the server
+            $.ajax({
+                url: '/save_track',
+                method: 'POST',
+                data: {
+                    track_data: trackData,
+                    track_name: trackName,
+                    track_comment: trackComment,
+                    sar_call_id: sarID,
+                },
+                success: function (response) {
+                    // Handle success response
+                    alert(response.message);
+                },
+                error: function (error) {
+                    // Handle error response
+                    alert('An error occurred while saving the track.');
+                }
+            });
+
+            // Close the modal
+            $('#saveTrackModal').modal('hide');
+        });
+    </script>
 
 
 {% endblock %}
