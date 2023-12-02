@@ -278,6 +278,7 @@
                 .catch(error => console.error('Error loading GPX file:', error));
         }
 
+
         var gpxData = {{ gpx_ids | tojson }};
 
         var map = L.map('map').setView([{{ sar.SARCall.latitude }}, {{ sar.SARCall.longitude }}], 13);
@@ -434,8 +435,34 @@
 
     <script>
         function getTrackData() {
+
+            var drItems = {
+                "type": "FeatureCollection",
+                "features": []
+            };
+
             // Assuming you are using a Leaflet.Draw FeatureGroup for drawn items
-            var drItems = drawnItems.toGeoJSON();
+
+
+            // Later in your code, when you want to iterate over the features
+            drawnItems.eachLayer(function (layer) {
+                feature = layer.toGeoJSON();
+
+                if (layer instanceof L.Circle) {
+                    feature.properties.radius = layer.getRadius();
+                    drItems.features.push(feature);
+                }
+                else if(layer instanceof L.CircleMarker)
+                {
+                    feature.properties.radius = layer.getRadius();
+                    drItems.features.push(feature);
+                }
+            else
+                {
+                    drItems.features.push(feature);
+                }
+            });
+
 
             // Check if there are any features (tracks) drawn
             if (drItems.features.length === 0) {
