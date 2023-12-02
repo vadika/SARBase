@@ -208,6 +208,12 @@ def delete_comment(id):
     comment = Comment.query.get_or_404(id)
     # if current_user.id != comment.user_id and current_user.id != 1 and current_user.id != comment.sar_call.user_id:
     #     abort(403)
+
+    # delete associated GPX files
+    gpx_tracks= GPSTrack.query.filter_by(comment_id=comment.id).all()
+    for track in gpx_tracks:
+        db.session.delete(track)
+
     db.session.delete(comment)
     db.session.commit()
     flash('Comment deleted successfully!', 'success')

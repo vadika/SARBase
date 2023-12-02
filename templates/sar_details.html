@@ -17,6 +17,7 @@
     <!-- Include leaflet-gpx plugin -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
 
+    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
     <script src="/static/togpx.js"></script>
 
     <style>
@@ -424,6 +425,11 @@
                 });
             });
         });
+
+        $('#uploadGPXModal').on('hie', function (e) {
+            // Refresh the parent page (assuming you want to refresh the entire page)
+            location.reload(); // This will refresh the current page
+        });
     </script>
 
     <script>
@@ -444,7 +450,32 @@
 
         // Function to convert GeoJSON to GPX
         function geoJSONToGPX(geoJSONData) {
-            var gpx = togpx(geoJSONData);
+
+            // Convert each point to a circle polygon
+            let convertedFeatures = geoJSONData.features.map(feature => {
+                console.log(feature);
+                if (feature.geometry.type === 'Point' && feature.properties.radius) {
+                    // Convert radius from meters to kilometers for turf.circle
+                    let radiusInKm = feature.properties.radius / 1000;
+
+                    // Create a circular polygon
+                    let circle = turf.circle(feature.geometry.coordinates, radiusInKm);
+
+                    // Optional: transfer other properties to the new feature
+                    circle.properties = {...feature.properties};
+
+                    return circle;
+                }
+                return feature;
+            });
+
+            // Create a new GeoJSON FeatureCollection
+            let convertedGeoJSON = {
+                "type": "FeatureCollection",
+                "features": convertedFeatures
+            };
+            console.log(convertedGeoJSON);
+            var gpx = togpx(convertedGeoJSON);
             return gpx;
         }
 
@@ -455,7 +486,7 @@
             var trackComment = document.getElementById('track-comment').value;
             var sarID = document.getElementById('sarIdForGPX').value;
 
-            // Get the track data (replace 'getTrackData()' with your method to obtain the track data)
+            // Get the track data
             var trackData = getTrackData();
 
             // Send trackName, trackComment, and trackData to the server
@@ -481,6 +512,12 @@
             // Close the modal
             $('#saveTrackModal').modal('hide');
         });
+
+        $('#saveTrackModal').on('hidden.bs.modal', function (e) {
+            // Refresh the parent page (assuming you want to refresh the entire page)
+            location.reload(); // This will refresh the current page
+        });
+
     </script>
 
 
