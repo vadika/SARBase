@@ -2,7 +2,7 @@ from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_login import current_user
 from app import app, db
-from models import User, Role, SARCall, Comment, SARCategory, GPSTrack, SARStatus, SARResult
+from models import User, Role, SARCall, Comment, SARCategory, GPSTrack, SARStatus, SARResult, FileAttachment
 
 class AdminModelView(ModelView):
     def is_accessible(self):
@@ -26,6 +26,7 @@ admin.add_view(UserModelView(User, db.session))
 admin.add_view(AdminModelView(SARCall, db.session))
 admin.add_view(AdminModelView(Comment, db.session))
 admin.add_view(AdminModelView(GPSTrack, db.session))
+admin.add_view(AdminModelView(FileAttachment, db.session))
 admin.add_view(AdminModelView(Role, db.session, category="Dictionaries"))
 admin.add_view(AdminModelView(SARCategory, db.session, category="Dictionaries"))
 admin.add_view(AdminModelView(SARStatus, db.session, category="Dictionaries"))

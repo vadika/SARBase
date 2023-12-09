@@ -12,4 +12,5 @@ gpxpy==1.6.1
 geopy==2.4.0
 flask_babel==4.0.0
 #flask_debugtoolbar==0.13.1
+pillow==10.1.0
 

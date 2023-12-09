@@ -4,99 +4,29 @@
     SAR Records
 {% endblock %}
 
+
+
 {% block content %}
-    <div class="container mt-5">
-        <h2>SAR Records</h2>
+    <div id="dynamic-sar-list">
 
-        <form method="get" action="{{ url_for('list_sar') }}" id="filter-form">
-        <!-- Filter by Status -->
-            <select id="status-select" name="status" onchange="submitForm()">
-                <option value="">All Statuses</option>
-                <!-- Populate options with statuses -->
-                {% for status in statuses %}
-                    <option value="{{ status.id }}">{{ status.name }}</option>
-                {% endfor %}
-            </select>
+    {% include 'dynamic-sar-list.html' %}
 
-            <!-- Filter by Category -->
-            <select id="category-select" name="category" onchange="submitForm()">
-                <option value="">All Categories</option>
-                <!-- Populate options with categories -->
-                {% for category in categories %}
-                    <option value="{{ category.id }}">{{ category.name }}</option>
-                {% endfor %}
-            </select>
-
-            <!-- Sorting Options -->
-            <select id="sort-select" name="sort" onchange="submitForm()">
-                <option value="date_asc">Date (Oldest First)</option>
-                <option value="date_desc">Date (Newest First)</option>
-                <!-- other sorting options -->
-            </select>
-        </form>
-
-
-        <table class="table table-bordered table-hover">
-            <thead>
-            <tr>
-                <th>Id</th>
-                <th>Title</th>
-                <th>Status</th>
-                <th>Start Date</th>
-                <th>Finish Date</th>
-                <th>Category</th>
-                <th>Created by</th>
-                <th>Manager</th>
-
-                {% if is_logged_in %}
-                    <th>Actions</th>
-                {% endif %}
-            </tr>
-            </thead>
-            <tbody>
-            {% for sar in sar_calls %}
-                <tr class="clickable-row" data-href="{{ url_for('sar_details', id=sar.SARCall.id) }}">
-                    <td>{{ sar.SARCall.id }}</td>
-                    <td>{{ sar.SARCall.title }}</td>
-                    <td>{{ sar.SARStatus.name }}</td>
-                    <td>{{ sar.SARCall.start_date }}</td>
-                    <td>{{ sar.SARCall.finish_date }}</td>
-                    <td>{{ sar.SARCategory.name }}</td>
-                    <td>{{ sar.SARCall.coordination_officer.full_name }}</td>
-                    <td>{{ sar.SARCall.search_officer.full_name }}</td>
-                    {% if is_logged_in %}
-                        <td>
-                            <a href="{{ url_for('edit_sar', id=sar.SARCall.id) }}">
-                                <button type="button" class="btn btn-info">Edit</button>
-                            </a>
-                            {#                        <a href="{{ url_for('delete_sar', id=sar.SARCall.id) }}">#}
-                            {#                            <button type="button" class="btn btn-danger">Delete</button>#}
-                            {#                        </a>#}
-                        </td>
-                    {% endif %}
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
-        {#        <a href="/dashboard">Back to Dashboard</a>#}
     </div>
 
-    <script>
-        document.querySelectorAll('.clickable-row').forEach(row => {
-            row.addEventListener('click', () => {
-                window.location.href = row.dataset.href;
-            });
+   <script>
+    $(document).ready(function() {
+    function updateSarDetails() {
+        $.ajax({
+            url: '/update_sar_list',
+            type: 'GET',
+            success: function(data) {
+                $('#dynamic-sar-list').html(data);  // Replace the content of the div
+            }
         });
-    </script>
+    }
+    updateSarDetails();  // Do it once immediately
+    setInterval(updateSarDetails, 5000);  // Then every 5 seconds
+});
 
-    <script>
-        function submitForm() {
-            document.getElementById("filter-form").submit();
-        }
-    </script>
-
-
-
-
-
+</script>
 {% endblock %}

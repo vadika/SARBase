@@ -104,3 +104,14 @@ class Comment(db.Model):
     user = db.relationship('User', backref=db.backref('comments', lazy=True))
     sar_call_id = db.Column(db.Integer, db.ForeignKey('sar_call.id'), nullable=False)
     sar_call = db.relationship('SARCall', backref=db.backref('comments', lazy=True))
+
+
+class FileAttachment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    file_name = db.Column(db.String(255), nullable=False)
+    file_type = db.Column(db.String(255), nullable=False)
+    file_path = db.Column(db.String(255), nullable=False)
+    comment_id = db.Column(db.Integer, db.ForeignKey('comment.id'), nullable=False)
+
+    def is_image(self):
+        return self.file_type in ['image/jpeg', 'image/png', 'image/gif']

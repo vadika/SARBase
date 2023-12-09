@@ -11,7 +11,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
 
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <!-- Leaflet.draw JS -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
     <!-- Include leaflet-gpx plugin -->
@@ -77,15 +76,17 @@
                         <!-- Other SAR details -->
                     </tr>
                 </table>
+                <div>
+                    {% if is_logged_in %}
+                        <a href="{{ url_for('edit_sar', sar_id=sar.SARCall.id) }}" class="btn btn-primary"> &#9998;</a>
+                        {# EDIT #}
+                        <a href="{{ url_for('delete_sar', sar_id=sar.SARCall.id) }}"
+                           class="btn btn-danger">&#128465;</a> {# DELETE #}
+                    {% endif %}
+                </div>
             </div>
         </div>
 
-        <div>
-            {% if is_logged_in %}
-                <a href="{{ url_for('edit_sar', id=sar.SARCall.id) }}" class="btn btn-primary">Edit</a>
-                <a href="{{ url_for('delete_sar', id=sar.SARCall.id) }}" class="btn btn-danger">Delete</a>
-            {% endif %}
-        </div>
 
         <div id="map" class="mb-4"></div>
 
@@ -95,41 +96,124 @@
             <div class="comment">
                 <div class="card mb-4">
                     <div class="card-body">
-                        <strong>{{ comment.user.full_name }}</strong>: at {{ comment.created }} ,
-                        updated {{ comment.updated }}
+                        <small> Comment # {{ comment.id }} by <strong>{{ comment.user.full_name }}</strong>
+                            at {{ comment.created }},
+                            updated {{ comment.updated }} </small>
                         <div class="card mb-5">
+                            {#  Comment text #}
                             <div class="card-body">
+
                                 <div class="comment-text"><p id="comment-text-{{ comment.id }}">{{ comment.text }}</p>
                                 </div>
-                            </div>
+
+                                {% if is_logged_in %}
+                                    {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar.SARCall.user_id %}
+                                        <button class="edit-comment-btn" data-comment-id="{{ comment.id }}"
+                                                data-comment-text="{{ comment.text }}"> &#9998; {# EDIT #}
+                                        </button>
+                                        <button type="button" class="delete-comment-btn">
+                                            <a href="{{ url_for('delete_comment', id=comment.id) }}">&#128465;</a>
+                                            {# DELETE #}
+                                        </button>
+                                    {% endif %}
+                                    </div>
+                                    {# GPX tracks part #}
+                                    <div class="card mb-6">
+                                        <div class="card-body">
+                                            {% set ns = namespace(drawn = false) %}
+                                            <small><strong>GPX track:</strong></small>
+                                            {% for gpx_track in comments_with_gpx %}
+                                                {% if gpx_track.comment_id == comment.id %}
+                                                    <li>
+                                                        <a href="{{ url_for('get_gpx', gpx_id=gpx_track.id) }}">{{ gpx_track.name }}</a>
+                                                    </li>
+                                                    {% set ns.drawn = true %}
+                                                    <!-- Button to delete GPX Upload Modal -->
+                                                    <button type="button" class="gpx-delete-button" data-toggle="modal"
+                                                            data-target="#deleteGPXModal"
+                                                            data-comment-id="{{ comment.id }}">
+                                                        &#128465;
+                                                    </button>
+                                                {% endif %}
+                                            {% endfor %}
+                                            {% if ns.drawn == false %}
+                                                <!-- Button to Open GPX Upload Modal -->
+                                                <button type="button" class="gpx-upload-button" data-toggle="modal"
+                                                        data-target="#uploadGPXModal"
+                                                        data-comment-id="{{ comment.id }}">
+                                                    Upload GPX File
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="card mb-6">
+                                    <div class="card-body">
+                                    {# File attachments part #}
+                                    <small><strong>File attachment:</strong></small><p>
+                                    {% set ns=namespace(has_file = false) %}
+                                    {% for file in comments_with_attachment %}
+                                        {% if file.comment_id == comment.id %}
+                                            {% set ns.has_file = true %}
+                                            {% if file.is_image %}
+                                                <img src="{{ url_for('download_thumb', filename=file.file_name) }}"
+                                                     class="img-thumbnail">
+                                                {% set filename = file.file_name %}
+                                            {% else %}
+                                                <i class="fa fa-file" aria-hidden="true"></i> {{ file.file_name }}
+                                            {% endif %}
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if is_logged_in %}
+                                        {% if ns.has_file %}
+                                            <!-- Display the attachment -->
+                                            <table>
+                                                <td>
+                                                    {# Download attachment #}
+                                                    <button type="submit" class="btn btn-primary">
+                                                        <a href="{{ url_for('download_attachment', filename=filename) }}">&#11015;</a>
+                                                    </button>
+                                                </td>
+                                                <td>
+                                                    <!-- Button to delete the attachment -->
+                                                    <form method="POST"
+                                                          action="{{ url_for('delete_file', attachment_id=comment.id) }}">
+                                                        {# Delete attachment #}
+                                                        <input type="hidden" id="sar_call_id" name="sarId"
+                                                               value="{{ sar.SARCall.id }}">
+                                                        <button type="submit" class="btn btn-danger">&#128465;</button>
+                                                    </form>
+                                                </td>
+                                            </table>
+                                        {% else %}
+
+                                            <form method="POST"
+                                                  action={{ url_for("upload_file") }} enctype="multipart/form-data">
+                                                <input type="file" name="file" accept="image/*">
+                                                <br><br>
+                                                <input type="submit" value="Upload">
+                                                <input type="file" id="attachmentInput" style="display: none;">
+                                                <input type="hidden" id="comment_id" name="commentId"
+                                                       value="{{ comment.id }}">
+                                                <input type="hidden" id="sar_call_id" name="sarId"
+                                                       value="{{ sar.SARCall.id }}">
+                                            </form>
+
+                                            <script>
+                                                // When the "Upload Attachment" button is clicked, trigger the file input
+                                                document.getElementById('uploadButton').addEventListener('click', function () {
+                                                    document.getElementById('attachmentInput').click();
+                                                });
+                                            </script>
+                                        {% endif %}
+
+
+                                    {% endif %}
+
+                                {% endif %}
+                                </div>
+                                </div>
                         </div>
-                        {% for gpx_track in comments_with_gpx %}
-                            {% if gpx_track.comment_id == comment.id %}
-                                <li>
-                                    <a href="{{ url_for('get_gpx', gpx_id=gpx_track.id) }}">{{ gpx_track.name }}</a>: {{ gpx_track.comment }}
-                                </li>
-                            {% endif %}
-
-                        {% endfor %}
-
-                        {% if is_logged_in %}
-                            {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar.SARCall.user_id %}
-                                <button class="edit-comment-btn" data-comment-id="{{ comment.id }}"
-                                        data-comment-text="{{ comment.text }}">Edit
-                                </button>
-                                <!-- Button to Open GPX Upload Modal -->
-                                <button type="button" class="gpx-upload-button" data-toggle="modal"
-                                        data-target="#uploadGPXModal"
-                                        data-comment-id="{{ comment.id }}">
-                                    Upload GPX File
-                                </button>
-
-                                <button type="button" class="delete-comment-btn">
-                                    <a href="{{ url_for('delete_comment', id=comment.id) }}">Delete</a>
-                                </button>
-
-                            {% endif %}
-                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -168,7 +252,7 @@
             <form action="{{ url_for('add_comment', sar_call_id=sar.SARCall.id) }}" method="post"
                   enctype="multipart/form-data">
                 <div class="form-group">
-                    <label for="text">Comment:</label>
+                    <label for="text"><small>Add comment:</small></label>
                     <textarea name="text" class="form-control"></textarea>
                 </div>
                 <div class="form-group">
@@ -212,13 +296,7 @@
     </div>
 
 
-    {#    <!-- Button to trigger the modal -->#}
-    {#    <button id="save-track-button" type="button" class="btn btn-primary" data-toggle="modal"#}
-    {#            data-target="#saveTrackModal">#}
-    {#        Save Track#}
-    {#    </button>#}
-
-    <!-- The Modal -->
+    <!-- The GPX upload modal -->
     <div class="modal fade" id="saveTrackModal" tabindex="-1" role="dialog" aria-labelledby="saveTrackModalLabel"
          aria-hidden="true">
         <div class="modal-dialog" role="document">
@@ -401,6 +479,13 @@
             $('#commentIdForGPX').val(commentId);
         });
 
+        $('#uploadGPXModal').on('hidden.bs.modal', function (e) {
+            // Refresh the parent page (assuming you want to refresh the entire page)
+            console.log("page refresh!!!");
+            location.reload(); // This will refresh the current page
+        });
+
+
         $(document).ready(function () {
             {#commentId = $(this).data('comment-id');#}
             {#console.log(commentId);#}
@@ -427,10 +512,7 @@
             });
         });
 
-        $('#uploadGPXModal').on('hie', function (e) {
-            // Refresh the parent page (assuming you want to refresh the entire page)
-            location.reload(); // This will refresh the current page
-        });
+
     </script>
 
     <script>
@@ -451,14 +533,10 @@
                 if (layer instanceof L.Circle) {
                     feature.properties.radius = layer.getRadius();
                     drItems.features.push(feature);
-                }
-                else if(layer instanceof L.CircleMarker)
-                {
+                } else if (layer instanceof L.CircleMarker) {
                     feature.properties.radius = layer.getRadius();
                     drItems.features.push(feature);
-                }
-            else
-                {
+                } else {
                     drItems.features.push(feature);
                 }
             });
@@ -502,8 +580,8 @@
                 "features": convertedFeatures
             };
             console.log(convertedGeoJSON);
-            var gpx = togpx(convertedGeoJSON);
-            return gpx;
+            // Convert GeoJSON to GPX
+            return togpx(convertedGeoJSON);
         }
 
 

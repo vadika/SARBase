@@ -28,6 +28,13 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret_key'
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL', 'mysql+mysqlconnector://sarbaseuser:password@localhost/sarbaseapp')
 app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+app.config['MAX_CONTENT_LENGTH'] = 128 * 1024 * 1024
+
+if os.environ.get('DOCKER_ENV') == 'true':
+    app.config['STORAGE_DIR'] = '/storage'
+else:
+    app.config['STORAGE_DIR'] = './storage'
+
 #app.debug = True
 #toolbar = DebugToolbarExtension(app)
 babel= Babel(app)
@@ -37,11 +44,11 @@ migrate = Migrate(app, db)
 login_manager = LoginManager(app)
 
 
-
 import models
 import admin
 import login
 import sar_calls
+import sar_call_details
 import dashboard
 
 

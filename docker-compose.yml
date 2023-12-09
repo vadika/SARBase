@@ -10,8 +10,10 @@ services:
     environment:
       - FLASK_ENV=development
       - DATABASE_URL=mysql+mysqlconnector://sarbaseuser:password@db/sarbaseapp
+      - DOCKER_ENV=true
     volumes:
       - ./certs:/certs
+      - ./storage:/storage
 
   nginx:
     build:
