@@ -6,33 +6,6 @@
 
 {% block content %}
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"/>
-    <!-- Leaflet.draw CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
-
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
-    <!-- Leaflet.draw JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
-    <!-- Include leaflet-gpx plugin -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-gpx/1.7.0/gpx.min.js"></script>
-
-    <script src='https://unpkg.com/@turf/turf@6/turf.min.js'></script>
-    <script src="/static/togpx.js"></script>
-
-    <style>
-        #map {
-            height: 400px;
-        }
-
-        .button {
-            margin: 5px;
-        }
-
-        .comment-text {
-            white-space: pre-line;
-        }
-    </style>
-
     <div class="container mt-4">
         <h2 class="mb-4">#{{ sar.SARCall.id }} : {{ sar.SARCall.title }}</h2>
         <div class="card mb-4">
