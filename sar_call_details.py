@@ -125,6 +125,16 @@ def upload_gpx():
     return jsonify({'message': 'GPX file uploaded successfully'})
 
 
+@app.route('/delete_gpx/<int:gpx_id>/<int:sar_id>', methods=['GET'])
+@login_required
+def delete_gpx(gpx_id, sar_id):
+    gpx_file = GPSTrack.query.get_or_404(gpx_id)
+    db.session.delete(gpx_file)
+    db.session.commit()
+    flash('GPX file deleted successfully!', 'success')
+    return redirect(url_for('sar_details', id=sar_id))
+
+
 def custom_flask_response(data, status=200, headers=None, mimetype='application/json'):
     # TODO: fix filename encoding -- need to support unicode
 

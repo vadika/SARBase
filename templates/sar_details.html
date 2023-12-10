@@ -102,10 +102,9 @@
                                                     </li>
                                                     {% set ns.drawn = true %}
                                                     <!-- Button to delete GPX Upload Modal -->
-                                                    <button type="button" class="gpx-delete-button" data-toggle="modal"
-                                                            data-target="#deleteGPXModal"
-                                                            data-comment-id="{{ comment.id }}">
-                                                        &#128465;
+                                                    <button type="button" class="gpx-delete-button">
+                                                            <a href="{{ url_for('delete_gpx', gpx_id=gpx_track.id, sar_id=sar.SARCall.id ) }}">
+                                                        &#128465;</a>
                                                     </button>
                                                 {% endif %}
                                             {% endfor %}
