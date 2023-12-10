@@ -5,11 +5,29 @@ from flask import request, redirect, flash, render_template, url_for, jsonify, R
 from flask_login import login_required, current_user
 from sqlalchemy import and_
 from sqlalchemy.orm import aliased
-from werkzeug.utils import secure_filename
 
 from app import app, db
 from models import SARCall, Comment, GPSTrack, SARCategory, SARStatus, User, SARResult, FileAttachment
-import base64
+import unicodedata
+import re
+from urllib.parse import quote
+
+def encode_header_value(value):
+    return quote(value.encode('utf8'))
+
+
+def secure_filename(filename):
+    """
+    Sanitize a filename by removing any dangerous characters or sequences,
+    while allowing Unicode characters.
+    """
+    # Normalize Unicode characters
+    filename = unicodedata.normalize('NFKD', filename).encode('utf-8', 'ignore').decode('utf-8')
+
+    # Remove any characters that aren't letters, numbers, underscores, or dots.
+    filename = re.sub(r'[^\w\s.-/]', '', filename).strip()
+    return filename
+
 
 @app.route('/sar_details/<int:id>')
 def sar_details(id):
@@ -108,7 +126,7 @@ def delete_comment(id):
 @login_required
 def upload_gpx():
     # Retrieve file and other data from the form
-    file_name = request.form.get('gpxFileName')
+    file_name = secure_filename(request.form.get('gpxFileName'))
     gpx_file = request.files.get('gpxFile')
     id = request.form.get('commentId')
     sar_id = request.form.get('sarId')
@@ -137,14 +155,14 @@ def delete_gpx(gpx_id, sar_id):
 
 def custom_flask_response(data, status=200, headers=None, mimetype='application/json'):
     # TODO: fix filename encoding -- need to support unicode
-
-    if headers is not None:
-        new_headers = {}
-        for key, value in headers.items():
-            new_key = base64.b64encode(str(key).encode('utf-8'))
-            new_value = base64.b64encode(str(value).encode('utf-8'))
-            new_headers[new_key] = new_value
-        headers = new_headers
+    #
+    # if headers is not None:
+    #     new_headers = {}
+    #     for key, value in headers.items():
+    #         new_key = base64.b64encode(str(key).encode('utf-8'))
+    #         new_value = base64.b64encode(str(value).encode('utf-8'))
+    #         new_headers[new_key] = new_value
+    #     headers = new_headers
 
     return Response(data, status=status, headers=headers, mimetype=mimetype)
 
@@ -154,7 +172,8 @@ def get_gpx(gpx_id):
     gpx_file = GPSTrack.query.get_or_404(gpx_id)
 
     return custom_flask_response(gpx_file.gpx_data, mimetype='application/gpx+xml',
-                    headers={'Content-Disposition': 'attachment;filename=' + gpx_file.file_name + '.gpx'})
+                                 headers={'Content-Disposition': 'attachment;filename=' + encode_header_value(
+                                     gpx_file.file_name + '.gpx')})
 
 
 @app.route('/save_track', methods=['POST'])
@@ -175,7 +194,8 @@ def save_track():
     db.session.commit()
 
     # Create a new GPXTrack instance and save it to the database
-    new_track = GPSTrack(comment_id=new_comment.id, sar_call_id=sar_id, file_name=track_name, gpx_data=track_data)
+    new_track = GPSTrack(comment_id=new_comment.id, sar_call_id=sar_id, file_name=secure_filename(track_name),
+                         gpx_data=track_data)
     db.session.add(new_track)
     db.session.commit()
 
@@ -186,11 +206,14 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx'}
 
 
 def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    print(filename)
+    allowed_name = '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    print(allowed_name)
+    return allowed_name
 
 
 def create_thumbnail(input_path, output_path, base_width=150):
-    img = Image.open(input_path)
+    img = Image.open(secure_filename(input_path))
     w_percent = (base_width / float(img.size[0]))
     h_size = int((float(img.size[1]) * float(w_percent)))
     img = img.resize((base_width, h_size))
@@ -233,7 +256,8 @@ def delete_file(attachment_id):
         try:
             os.remove(os.path.join(app.config['STORAGE_DIR'], attachment.file_name))
             try:
-                os.remove(os.path.join(app.config['STORAGE_DIR'], 'thumbs', attachment.file_name))  # If a thumbnail exists
+                os.remove(
+                    os.path.join(app.config['STORAGE_DIR'], 'thumbs', attachment.file_name))  # If a thumbnail exists
             except:
                 flash('File thumbnail not deleted', 'danger')
             db.session.delete(attachment)
