@@ -103,8 +103,8 @@
                                                     {% set ns.drawn = true %}
                                                     <!-- Button to delete GPX Upload Modal -->
                                                     <button type="button" class="gpx-delete-button">
-                                                            <a href="{{ url_for('delete_gpx', gpx_id=gpx_track.id, sar_id=sar.SARCall.id ) }}">
-                                                        &#128465;</a>
+                                                        <a href="{{ url_for('delete_gpx', gpx_id=gpx_track.id, sar_id=sar.SARCall.id ) }}">
+                                                            &#128465;</a>
                                                     </button>
                                                 {% endif %}
                                             {% endfor %}
@@ -123,46 +123,38 @@
                                     {# File attachments part #}
                                     <small><strong>File attachment:</strong></small><p>
                                     {% set ns=namespace(has_file = false) %}
+                                    {% set fs=namespace(filename = 0) %}
                                     {% for file in comments_with_attachment %}
                                         {% if file.comment_id == comment.id %}
                                             {% set ns.has_file = true %}
-                                            {% if file.is_image %}
-                                                <img src="{{ url_for('download_thumb', filename=file.file_name) }}"
-                                                     class="img-thumbnail">
-                                                {% set filename = file.file_name %}
-                                            {% else %}
-                                                <i class="fa fa-file" aria-hidden="true"></i> {{ file.file_name }}
-                                            {% endif %}
+                                            <a href="{{ url_for('download_file', filename = file.file_name) }}">
+                                                {% if file.is_image %}
+                                                    <img src="{{ url_for('download_thumb', filename=file.file_name) }}"
+                                                         class="img-thumbnail">
+                                                {% else %}
+                                                    <i class="fa fa-file" aria-hidden="true"></i> {{ file.file_name }}
+                                                {% endif %}
+                                                {% set fs.filename = file.id %}
+                                            </a>
                                         {% endif %}
                                     {% endfor %}
 
                                     {% if is_logged_in %}
                                         {% if ns.has_file %}
                                             <!-- Display the attachment -->
-                                            <table>
-                                                <td>
-                                                    {# Download attachment #}
-                                                    <button type="submit" class="btn btn-primary">
-                                                        <a href="{{ url_for('download_attachment', filename=filename) }}">&#11015;</a>
-                                                    </button>
-                                                </td>
-                                                <td>
-                                                    <!-- Button to delete the attachment -->
-                                                    <form method="POST"
-                                                          action="{{ url_for('delete_file', attachment_id=comment.id) }}">
-                                                        {# Delete attachment #}
-                                                        <input type="hidden" id="sar_call_id" name="sarId"
-                                                               value="{{ sar.SARCall.id }}">
-                                                        <button type="submit" class="btn btn-danger">&#128465;</button>
-                                                    </form>
-                                                </td>
-                                            </table>
+                                            <!-- Button to delete the attachment -->
+                                            <form method="POST"
+                                                  action="{{ url_for('delete_file', attachment_id=fs.filename) }}">
+                                                {# Delete attachment #}
+                                                <input type="hidden" id="sar_call_id" name="sarId"
+                                                       value="{{ sar.SARCall.id }}">
+                                                <button type="submit" class="btn btn-danger">&#128465;</button>
+                                            </form>
                                         {% else %}
 
                                             <form method="POST"
                                                   action={{ url_for("upload_file") }} enctype="multipart/form-data">
                                                 <input type="file" name="file" accept="image/*">
-                                                <br><br>
                                                 <input type="submit" value="Upload">
                                                 <input type="file" id="attachmentInput" style="display: none;">
                                                 <input type="hidden" id="comment_id" name="commentId"

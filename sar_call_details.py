@@ -247,9 +247,9 @@ def delete_file(attachment_id):
     return redirect(url_for('sar_details', id=sar_id))
 
 
-@app.route('/download_attachment/<string:filename>')
+@app.route('/download_file/<string:filename>')
 @login_required
-def download_attachment(filename):
+def download_file(filename):
     # Implement code to serve the attachment for download
     # You may use Flask's send_from_directory or send_file
     return send_from_directory(app.config['STORAGE_DIR'], filename)
