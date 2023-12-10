@@ -323,7 +323,11 @@
 
         var gpxData = {{ gpx_ids | tojson }};
 
-        var map = L.map('map').setView([{{ sar.SARCall.latitude }}, {{ sar.SARCall.longitude }}], 13);
+        var map = L.map('map',
+        {
+            fullscreenControl: true,
+        }
+        ).setView([{{ sar.SARCall.latitude }}, {{ sar.SARCall.longitude }}], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '© OpenStreetMap contributors'
@@ -334,6 +338,25 @@
         gpxData.forEach(function (id) {
             loadAndDisplayGPX(id);
         });
+
+        // context menu
+
+        var coordControl = L.control({position: 'bottomright'});
+
+        map.on('contextmenu', function (e) {
+            var coords = e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
+
+            // Create a temporary input to copy the text.
+            var tempInput = document.createElement('input');
+            document.body.appendChild(tempInput);
+            tempInput.value = coords;
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            coordControl.getContainer().innerHTML = "<strong>To clipboard: </strong> " + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
+        });
+
 
         // Initialize drawing capabilities
         var drawnItems = new L.FeatureGroup();
@@ -352,6 +375,21 @@
             },
         });
         map.addControl(drawControl);
+
+        // Create a control for displaying the coordinates.
+
+        coordControl.onAdd = function (map) {
+            this._container = L.DomUtil.create('div', 'leaflet-control-coordinates');
+            return this._container;
+        }
+        coordControl.addTo(map);
+
+        // Update the control when the mouse is moved.
+        map.on('mousemove', function (e) {
+            coordControl.getContainer().innerHTML = " " + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
+        });
+
+
 
 
         map.on('draw:created', function (e) {
