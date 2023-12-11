@@ -62,7 +62,7 @@
 
 
         <div id="map" class="mb-4"></div>
-
+        <div id="markers" class="mb-4"></div>  <!-- New element for displaying marker coordinates -->
 
         <!-- Display Comments -->
         {% for comment in sar.SARCall.comments %}
@@ -314,13 +314,45 @@
                 .catch(error => console.error('Error loading GPX file:', error));
         }
 
+        var coords = [];
+
+        function addMarker(e) {
+            // remove last marker if any
+            // markers.clearLayers();
+
+            // update circle count
+            circleCount++;
+            coords.push([e.latlng.lat.toFixed(5), e.latlng.lng.toFixed(5)]);
+
+
+            // create a new divIcon
+            var circleIcon = L.divIcon({
+                className: 'circle-icon',
+                html: circleCount,
+                iconSize: [15, 15]
+            });
+
+            // add new marker with custom icon
+            var marker = L.marker(e.latlng, {icon: circleIcon}).addTo(markers);
+
+            // update coordinates display
+            document.getElementById('markers').innerText = coords.join(' ');
+
+            // Create a temporary input to copy the text.
+            var tempInput = document.createElement('input');
+            document.body.appendChild(tempInput);
+            tempInput.value = coords.join(' ');
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+        }
 
         var gpxData = {{ gpx_ids | tojson }};
 
         var map = L.map('map',
-        {
-            fullscreenControl: true,
-        }
+            {
+                fullscreenControl: true,
+            }
         ).setView([{{ sar.SARCall.latitude }}, {{ sar.SARCall.longitude }}], 13);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
@@ -335,20 +367,20 @@
 
         // context menu
 
+        var markers = L.layerGroup().addTo(map);
+        var circleCount = 0;
+
+
         var coordControl = L.control({position: 'bottomright'});
 
         map.on('contextmenu', function (e) {
             var coords = e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
 
-            // Create a temporary input to copy the text.
-            var tempInput = document.createElement('input');
-            document.body.appendChild(tempInput);
-            tempInput.value = coords;
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
+
 
             coordControl.getContainer().innerHTML = "<strong>To clipboard: </strong> " + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
+
+            addMarker(e);
         });
 
 
@@ -365,7 +397,7 @@
                 polyline: true,
                 rectangle: false,
                 circle: true,
-                marker: true,
+                marker: false,
             },
         });
         map.addControl(drawControl);
@@ -383,7 +415,13 @@
             coordControl.getContainer().innerHTML = " " + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
         });
 
-
+        // remove all markers on left click and reset circle count
+        map.on('click', function () {
+            markers.clearLayers();
+            circleCount = 0;
+            document.getElementById('markers').innerText = "";
+            coords = [];
+        });
 
 
         map.on('draw:created', function (e) {
