@@ -60,15 +60,14 @@
 
             <div class="form-group">
                 <label for="coordinates">IPP Coordinates:</label>
-                <input type="text" name="longitude" class="form-control" value="{{ sar_call.longitude }}" required>
                 <input type="text" name="latitude" class="form-control" value="{{ sar_call.latitude }}" required>
+                <input type="text" name="longitude" class="form-control" value="{{ sar_call.longitude }}" required>
             </div>
 
             <div class="form-group">
                 <label for="coordinates">Victim found coordinates:</label>
-                <input type="text" name="longitude_found" class="form-control" value="{{ sar_call.longitude_found }}">
                 <input type="text" name="latitude_found" class="form-control" value="{{ sar_call.latitude_found }}">
-
+                <input type="text" name="longitude_found" class="form-control" value="{{ sar_call.longitude_found }}">
                 <div class="form-group">
                     <label for="title">Title:</label>
                     <input type="text" name="title" class="form-control" value="{{ sar_call.title }}" required>
