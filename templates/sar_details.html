@@ -75,11 +75,12 @@
                         <div class="card mb-5">
                             {#  Comment text #}
                             <div class="card-body">
-
-                                <div class="comment-text"><p id="comment-text-{{ comment.id }}">{{ comment.text }}</p>
-                                </div>
-
                                 {% if is_logged_in %}
+
+                                    <div class="comment-text"><p
+                                            id="comment-text-{{ comment.id }}">{{ comment.text }}</p>
+                                    </div>
+
                                     {% if current_user.id == comment.user_id or current_user.id == 1 or current_user.id == sar.SARCall.user_id %}
                                         <button class="edit-comment-btn" data-comment-id="{{ comment.id }}"
                                                 data-comment-text="{{ comment.text }}"> &#9998; {# EDIT #}
@@ -367,6 +368,7 @@
         });
 
         // context menu
+        {% if is_logged_in %}
 
         var markers = L.layerGroup().addTo(map);
         var circleCount = 0;
@@ -376,7 +378,6 @@
 
         map.on('contextmenu', function (e) {
             var coords = e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
-
 
 
             coordControl.getContainer().innerHTML = "<strong>To clipboard: </strong> " + e.latlng.lat.toFixed(5) + ", " + e.latlng.lng.toFixed(5);
@@ -402,6 +403,8 @@
             },
         });
         map.addControl(drawControl);
+        {% endif %}
+
 
         // Create a control for displaying the coordinates.
 
